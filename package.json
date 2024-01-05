@@ -1,16 +1,16 @@
 {
   "private": true,
-  "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
+  "displayName": "Navien Smart",
+  "name": "homebridge-navien-smart",
   "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "description": "Homebridge plugin to control Navien devices via Navien Smart",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues"
   },
   "engines": {
     "node": "^18.17.0 || ^20.9.0",

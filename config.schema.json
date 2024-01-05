@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "NavienSmart",
   "pluginType": "platform",
   "singular": true,
   "schema": {
