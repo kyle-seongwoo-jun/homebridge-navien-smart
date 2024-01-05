@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "name": "Debug Homebridge",
+      // your path to homebridge: $(which homebridge)
+      "program": "/Users/kyle/.nvm/versions/node/v20.9.0/bin/homebridge",
+      "preLaunchTask": "tsc: build - tsconfig.json",
+      "internalConsoleOptions": "neverOpen",
+      "args": ["-I", "-D"],
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+    }
+  ]
+}
