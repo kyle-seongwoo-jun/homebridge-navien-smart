@@ -1,6 +1,6 @@
 import { API } from 'homebridge';
 
-import { ExampleHomebridgePlatform } from './platform';
+import { ExampleHomebridgePlatform } from './homebridge/platform';
 import { PLATFORM_NAME } from './settings';
 
 /**
