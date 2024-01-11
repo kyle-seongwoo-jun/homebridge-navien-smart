@@ -5,11 +5,45 @@
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Name",
+      "auth_mode": {
+        "title": "Auth Mode",
         "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "account",
+        "oneOf": [
+          {
+            "title": "Navien Smart Account",
+            "enum": [
+              "account"
+            ]
+          },
+          {
+            "title": "Token",
+            "enum": [
+              "token"
+            ]
+          }
+        ]
+      },
+      "username": {
+        "title": "Username",
+        "type": "string",
+        "condition": {
+          "functionBody": "return model.auth_mode === 'account';"
+        }
+      },
+      "password": {
+        "title": "Password",
+        "type": "string",
+        "condition": {
+          "functionBody": "return model.auth_mode === 'account';"
+        }
+      },
+      "refresh_token": {
+        "title": "Refresh Token",
+        "type": "string",
+        "condition": {
+          "functionBody": "return model.auth_mode === 'token';"
+        }
       }
     }
   }

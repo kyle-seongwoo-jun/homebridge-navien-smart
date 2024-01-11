@@ -1,3 +1,12 @@
+export interface LoginResponse {
+  loginId: string;
+  clientId: string;
+  accessToken: string;
+  authenticationExpiresIn: number;
+  userSeq: number;
+  refreshToken: string;
+}
+
 export interface Device {
     deviceSeq: number;
     serviceCode: number;

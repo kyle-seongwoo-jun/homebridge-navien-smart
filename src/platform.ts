@@ -2,12 +2,17 @@ import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, 
 
 import ElectricMat from './homebridge/ElectricMat';
 import { Device } from './navien/navien.model';
+import { NavienService } from './navien/navien.service';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
-export type NavienDeviceContext = {
-  device: Device;
-};
+type NavienDeviceContext = { device: Device };
 export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
+export type NavienPlatformConfig = PlatformConfig & {
+  auth_mode: 'account' | 'token';
+  username: string;
+  password: string;
+  refresh_token: string;
+};
 
 /**
  * HomebridgePlatform
@@ -21,12 +26,16 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: NavienPlatformAccessory[] = [];
 
+  public readonly navienService: NavienService;
+
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug('Finished initializing platform:', this.config.name);
+    this.log.debug('Finished initializing platform:', this.config.platform);
+
+    this.navienService = new NavienService(this.log, this.config as NavienPlatformConfig);
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,
@@ -35,7 +44,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', async () => {
       log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
-      const devices = await this.discoverDevices();
+      const devices = await this.navienService.getDevices();
       for (const device of devices) {
         this.registerDeviceAsAccessory(device);
       }
@@ -51,20 +60,6 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
     // add the restored accessory to the accessories cache so we can track if it has already been registered
     this.accessories.push(accessory as NavienPlatformAccessory);
-  }
-
-  /**
-   * This is an example method showing how to register discovered accessories.
-   * Accessories must only be registered once, previously created accessories
-   * must not be registered again to prevent "duplicate UUID" errors.
-   */
-  async discoverDevices(): Promise<Device[]> {
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
-    const exampleDevices = [] as Device[];
-
-    return exampleDevices;
   }
 
   registerDeviceAsAccessory(device: Device) {
