@@ -1,10 +1,6 @@
-export interface LoginResponse {
-  loginId: string;
-  clientId: string;
-  accessToken: string;
-  authenticationExpiresIn: number;
-  userSeq: number;
-  refreshToken: string;
+export interface AuthInfo {
+    accessToken: string;
+    authenticationExpiresIn: number; // seconds
 }
 
 export interface Device {

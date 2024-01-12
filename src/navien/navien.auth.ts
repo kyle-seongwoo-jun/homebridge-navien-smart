@@ -3,37 +3,17 @@ import { Logger } from 'homebridge';
 import nodeFetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
-import { NavienPlatformConfig } from '../platform';
-import { LoginResponse } from './navien.model';
+import { LoginResponse, RefreshTokenResponse } from './navien.response';
 
+const API_URL = 'https://nskr.naviensmartcontrol.com/api/v1.0';
 const LOGIN_API_URL = 'https://member.naviensmartcontrol.com';
 // eslint-disable-next-line max-len
 const USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 APP_NAVIENSMART_IOS';
 
 export class NavienAuth {
-  private _refreshToken?: string;
-
   constructor(
-          private readonly log: Logger,
-          private readonly config: NavienPlatformConfig,
-  ) {
-    if (config.auth_mode === 'token') {
-      this._refreshToken = config.refresh_token;
-    }
-  }
-
-  async refreshToken() {
-    if (this._refreshToken) {
-      return this._refreshToken;
-    }
-
-    const { username, password } = this.config;
-    const token = this._refreshToken = await this.login(username, password).then(response => response.refreshToken);
-
-    this.saveToken(token);
-
-    return token;
-  }
+    private readonly log: Logger,
+  ){ }
 
   async login(username: string, password: string): Promise<LoginResponse> {
     this.log.debug(`Logging in with username: ${username}, password: ${password}`);
@@ -68,7 +48,21 @@ export class NavienAuth {
     return loginResponse;
   }
 
-  async saveToken(token: string) {
-    // TODO: Implement
+  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+    this.log.debug(`Refreshing token with refreshToken: ${refreshToken}`);
+
+    const fetch = nodeFetch;
+    const response = await fetch(`${API_URL}/auth/token/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        'refreshToken': refreshToken,
+      }),
+    });
+
+    const json = await response.json() as RefreshTokenResponse;
+    return json;
   }
 }

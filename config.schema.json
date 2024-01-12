@@ -26,10 +26,7 @@
       },
       "username": {
         "title": "Username",
-        "type": "string",
-        "condition": {
-          "functionBody": "return model.auth_mode === 'account';"
-        }
+        "type": "string"
       },
       "password": {
         "title": "Password",
@@ -41,6 +38,13 @@
       "refresh_token": {
         "title": "Refresh Token",
         "type": "string",
+        "condition": {
+          "functionBody": "return model.auth_mode === 'token';"
+        }
+      },
+      "account_id": {
+        "title": "Account Seq",
+        "type": "number",
         "condition": {
           "functionBody": "return model.auth_mode === 'token';"
         }

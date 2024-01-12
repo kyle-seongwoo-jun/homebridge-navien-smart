@@ -10,8 +10,9 @@ export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
 export type NavienPlatformConfig = PlatformConfig & {
   auth_mode: 'account' | 'token';
   username: string;
-  password: string;
-  refresh_token: string;
+  password?: string;
+  refresh_token?: string;
+  account_seq?: number;
 };
 
 /**
