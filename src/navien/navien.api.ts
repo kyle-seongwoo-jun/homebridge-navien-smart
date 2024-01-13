@@ -1,10 +1,9 @@
 import { Logger } from 'homebridge';
 import fetch from 'node-fetch';
 
+import { API_URL } from './constants';
 import { Device } from './navien.model';
 import { DevicesResponse } from './navien.response';
-
-const API_URL = 'https://nskr.naviensmartcontrol.com/api/v1.0';
 
 export class NavienApi {
   constructor(
