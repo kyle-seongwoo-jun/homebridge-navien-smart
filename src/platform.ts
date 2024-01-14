@@ -44,6 +44,17 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     // to start discovery of new accessories.
     this.api.on('didFinishLaunching', async () => {
       log.debug('Executed didFinishLaunching callback');
+
+      // wait for the navien service to be ready
+      const ready = await this.navienService.ready().catch((error) => {
+        log.error('Error while waiting for Navien API to be ready:', error);
+        return false;
+      });
+      if (!ready) {
+        log.error('Navien API is not ready, please check your configuration.');
+        return;
+      }
+
       // run the method to discover / register your devices as accessories
       const devices = await this.navienService.getDevices();
       for (const device of devices) {

@@ -8,8 +8,8 @@ export class Session {
       private readonly _accessToken: string,
       private readonly _refreshToken: string,
       expiresIn: number,
-      private readonly _userId: string,
-      private readonly _accountSeq: number,
+      readonly userId: string,
+      readonly accountSeq: number,
   ) {
     this.expiresOn = (Date.now() + expiresIn);
   }
@@ -44,8 +44,8 @@ export class Session {
       options.accessToken,
       this._refreshToken,
       options.expiresIn,
-      this._userId,
-      this._accountSeq,
+      this.userId,
+      this.accountSeq,
     );
   }
 

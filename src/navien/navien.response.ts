@@ -1,4 +1,4 @@
-import { AuthInfo, Device } from './navien.model';
+import { Device, Login2Data, TokenAuthInfo } from './navien.model';
 
 export interface LoginResponse {
     loginId: string;
@@ -15,6 +15,8 @@ export interface NavienResponse<T> {
     data: T;
 }
 
-export type RefreshTokenResponse = NavienResponse<{ authInfo: AuthInfo }>;
+export type RefreshTokenResponse = NavienResponse<{ authInfo: TokenAuthInfo }>;
+
+export type Login2Response = NavienResponse<Login2Data>;
 
 export type DevicesResponse = NavienResponse<{ devices: Device[] }>;
