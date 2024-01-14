@@ -105,8 +105,12 @@ export default class ElectricMat {
 
   async setHeatingState(value: CharacteristicValue) {
     const state = value as number;
+    const { navienService } = this.platform;
+    const { device } = this.accessory.context;
 
     this.platform.log.debug('Set Heating State:', state ? 'ON' : 'OFF');
+
+    navienService.setPower(device, !!state);
 
     // TODO: implement your own code to turn your device on/off
     this.exampleStates.heatingState = state;
@@ -127,9 +131,14 @@ export default class ElectricMat {
   async setTemperature(value: CharacteristicValue) {
     const temperature = value as number;
 
+    this.platform.log.debug('Set Temperature:', temperature);
+
+    const { navienService } = this.platform;
+    const { device } = this.accessory.context;
+
+    navienService.setTemperature(device, temperature);
+
     // implement your own code to set the brightness
     this.exampleStates.temperature = temperature;
-
-    this.platform.log.debug('Set Temperature:', temperature);
   }
 }

@@ -5,7 +5,7 @@ import { NavienPlatformConfig } from '../platform';
 import { API_URL } from './constants';
 import { NavienAuth } from './navien.auth';
 import { Device, Login2Data } from './navien.model';
-import { DevicesResponse, Login2Response } from './navien.response';
+import { CommonResponse, DevicesResponse, Login2Response, ResponseCode } from './navien.response';
 import { Session } from './Session';
 
 type RequestMethods = 'GET' | 'POST';
@@ -134,14 +134,105 @@ export class NavienApi {
       throw new Error('should call ready() first.');
     }
 
+    const { familySeq, userSeq } = this._session2;
+
     const response = await this.request<DevicesResponse>('GET', '/devices', {
       query: {
-        familySeq: `${this._session2.familySeq}`,
-        userSeq: `${this._session2.userSeq}`,
+        familySeq: `${familySeq}`,
+        userSeq: `${userSeq}`,
       },
     });
 
     const { devices } = response.data;
     return devices;
+  }
+
+  private async controlDevice(device: Device, payload: unknown) {
+    if (!this._session2) {
+      throw new Error('should call ready() first.');
+    }
+
+    const { familySeq, userSeq } = this._session2;
+    const { serviceCode, deviceId, deviceSeq } = device;
+
+    const response = await this.request<CommonResponse>('POST', `/devices/${deviceSeq}/control`, {
+      query: {
+        familySeq: `${familySeq}`,
+        userSeq: `${userSeq}`,
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        serviceCode: serviceCode,
+        topic: `$aws\\/things\\/${deviceId}\\/shadow\\/name\\/status\\/update`,
+        payload: payload,
+      }).replace(/\\\\/g, '\\'), // \\/ -> \/ in topic
+    });
+
+    return response.code === ResponseCode.SUCCESS;
+  }
+
+  public setPower(device: Device, power: boolean) {
+    const { modelCode } = device;
+
+    return this.controlDevice(device, {
+      state: {
+        desired: {
+          event: {
+            modelCode: parseInt(modelCode),
+          },
+          operationMode: power ? 1 : 0,
+        },
+      },
+    });
+  }
+
+  public setTemperature(device: Device, temperature: number) {
+    const {
+      modelCode,
+      Properties: {
+        registry: {
+          attributes: {
+            functions: {
+              heatControl,
+            },
+          },
+        },
+      },
+    } = device;
+
+    // validate temperature
+    const { rangeMin, rangeMax, unit } = heatControl;
+    if (temperature < rangeMin || temperature > rangeMax) {
+      throw new Error(`Temperature must be between ${rangeMin} and ${rangeMax}. current: ${temperature}`);
+    }
+    if (temperature % parseFloat(unit) !== 0) {
+      throw new Error(`Temperature must be multiple of ${unit}. current: ${temperature}`);
+    }
+
+    return this.controlDevice(device, {
+      state: {
+        desired: {
+          event: {
+            modelCode: parseInt(modelCode),
+          },
+          heater: {
+            left: {
+              enable: true,
+              temperature: {
+                set: temperature,
+              },
+            },
+            right: {
+              enable: true,
+              temperature: {
+                set: temperature,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }
