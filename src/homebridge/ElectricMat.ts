@@ -43,6 +43,7 @@ export default class ElectricMat {
         Name,
         CurrentHeatingCoolingState,
         TargetHeatingCoolingState,
+        CurrentTemperature,
         TargetTemperature,
         TemperatureDisplayUnits,
       },
@@ -75,7 +76,7 @@ export default class ElectricMat {
       .onGet(this.getHeatingState.bind(this))
       .onSet(this.setHeatingState.bind(this));
 
-    // target temp
+    // target temperature
     const { heatControl } = device.Properties.registry.attributes.functions;
     thermostat.getCharacteristic(TargetTemperature)
       .setProps({
@@ -85,6 +86,10 @@ export default class ElectricMat {
       })
       .onGet(this.getTemperature.bind(this))
       .onSet(this.setTemperature.bind(this));
+
+    // current temperature
+    thermostat.getCharacteristic(CurrentTemperature)
+      .onGet(this.getTemperature.bind(this));
 
     return thermostat;
   }
