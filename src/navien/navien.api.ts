@@ -134,7 +134,7 @@ export class NavienApi {
       throw new Error('should call ready() first.');
     }
 
-    const response = await this.request<DevicesResponse>('GET', '/device', {
+    const response = await this.request<DevicesResponse>('GET', '/devices', {
       query: {
         familySeq: `${this._session2.familySeq}`,
         userSeq: `${this._session2.userSeq}`,
