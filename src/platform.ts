@@ -1,10 +1,12 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
+import path from 'path';
 
 import ElectricMat from './homebridge/electric-mat.device';
 import { ConfigurationException } from './navien/exceptions';
 import { Device } from './navien/interfaces';
 import { NavienService } from './navien/navien.service';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
+import { Persist } from './utils/persist.util';
 
 type NavienDeviceContext = { device: Device };
 export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
@@ -35,9 +37,9 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug('Finished initializing platform:', this.config.platform);
+    this.log.debug('Finished initializing platform:', config.platform);
 
-    this.navienService = new NavienService(this.log, this.config as NavienPlatformConfig);
+    this.navienService = new NavienService(this, log, config as NavienPlatformConfig);
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,
@@ -122,5 +124,10 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       // link the accessory to your platform
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
+  }
+
+  createPersist(...paths: string[]) {
+    const dir = path.join(this.api.user.storagePath(), PLUGIN_NAME, 'persist', ...paths);
+    return new Persist(dir);
   }
 }

@@ -3,95 +3,34 @@ import { Logger } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
 import { AwsSession } from '../aws/aws.session';
-import { NavienPlatformConfig } from '../platform';
 import { API_URL } from './constants';
-import { ConfigurationException } from './exceptions';
 import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
-import { NavienAuth } from './navien.auth';
 import { NavienSession } from './navien.session';
+import { NavienSessionManager } from './navien.session-manager';
 import { NavienUser } from './navien.user';
 
 type RequestMethods = 'GET' | 'POST';
 
 export class NavienApi {
-  private readonly auth: NavienAuth;
-  private _session?: NavienSession;
-  private _awsSession?: AwsSession;
-  private _user?: NavienUser;
-
   constructor(
     private readonly log: Logger,
-    private readonly config: NavienPlatformConfig,
-  ) {
-    this.auth = new NavienAuth(log);
+    private readonly sessionManager: NavienSessionManager,
+  ) { }
+
+  private get session(): NavienSession | undefined {
+    return this.sessionManager.session;
+  }
+
+  private get awsSession(): AwsSession | undefined {
+    return this.sessionManager.awsSession;
+  }
+
+  private get user(): NavienUser | undefined {
+    return this.sessionManager.user;
   }
 
   public async ready() {
-    // load session with config
-    const { session, userId, accountSeq } = await this._loadSessionWithConfig();
-
-    // login with session
-    const response = await this.auth.login2(session.accessToken, userId, accountSeq);
-    assert(response.data, 'No data in login2 response.');
-
-    const { familySeq, userSeq, authInfo } = response.data;
-    const awsSession = AwsSession.fromResponse(authInfo);
-    const user = new NavienUser(userId, accountSeq, userSeq, familySeq);
-
-    // update session
-    this._session = session;
-    this._awsSession = awsSession;
-    this._user = user;
-  }
-
-  private async _loadSessionWithConfig() {
-    const { authMode, username, password, accountSeq, refreshToken } = this.config;
-
-    if (authMode === 'account') {
-      // validate config
-      if (!password) {
-        throw ConfigurationException.empty('password');
-      }
-
-      // login with username/password
-      const response = await this.auth.login(username, password);
-
-      const session = NavienSession.fromResponse(response);
-      return {
-        session,
-        userId: response.loginId,
-        accountSeq: response.userSeq,
-      };
-    }
-
-    if (authMode === 'token') {
-      // validate config
-      if (!accountSeq) {
-        throw ConfigurationException.empty('accountSeq');
-      }
-      if (!refreshToken) {
-        throw ConfigurationException.empty('refreshToken');
-      }
-
-      // refresh token
-      const response = await this.auth.refreshToken(refreshToken);
-      if (!response.data) {
-        throw new ConfigurationException(
-          'refreshToken',
-          'refreshToken may be expired. Please login again to get new one and update your config.json',
-        );
-      }
-
-      const session = NavienSession.fromAuthInfo(response.data.authInfo, refreshToken);
-      return {
-        session,
-        userId: username,
-        accountSeq: accountSeq,
-      };
-    }
-
-    // should not reach here
-    throw ConfigurationException.invalid('authMode', authMode, { validValue: 'account or token' });
+    await this.sessionManager.ready();
   }
 
   private async _request(
@@ -105,7 +44,7 @@ export class NavienApi {
   ): Promise<Response> {
     const { query, headers, body } = options;
 
-    const { accessToken } = this._session || {};
+    const { accessToken } = this.session || {};
     if (!accessToken) {
       throw new Error('No access token. Please call ready() first.');
     }
@@ -157,11 +96,11 @@ export class NavienApi {
   }
 
   public async getDevices(): Promise<Device[]> {
-    if (!this._user) {
+    if (!this.user) {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this._user;
+    const { familySeq, userSeq } = this.user;
 
     const response = await this.request<DevicesResponse>('GET', '/devices', {
       query: {
@@ -176,11 +115,11 @@ export class NavienApi {
   }
 
   private async controlDevice(device: Device, payload: unknown) {
-    if (!this._user) {
+    if (!this.user) {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this._user;
+    const { familySeq, userSeq } = this.user;
     const { serviceCode, deviceId, deviceSeq } = device;
 
     const response = await this.request<CommonResponse>('POST', `/devices/${deviceSeq}/control`, {

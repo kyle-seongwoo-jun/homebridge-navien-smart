@@ -1,18 +1,39 @@
 import { LoginResponse, TokenAuthInfo } from './interfaces';
 
 export class NavienSession {
-  private readonly expiresOn: number; // milliseconds
-
   constructor(
-      private readonly _accessToken: string,
-      private readonly _refreshToken: string,
-      expiresIn: number, // milliseconds
-  ) {
-    this.expiresOn = (Date.now() + expiresIn);
+      readonly accessToken: string,
+      readonly refreshToken: string,
+      readonly expiresAt: number, // milliseconds
+  ) { }
+
+  static from(
+    accessToken: string,
+    refreshToken: string,
+    expiresIn: number, // milliseconds
+  ): NavienSession {
+    return new NavienSession(
+      accessToken,
+      refreshToken,
+      Date.now() + expiresIn,
+    );
+  }
+
+  static fromJSON(json: unknown): NavienSession {
+    if (typeof json !== 'object' || json === null) {
+      throw new Error('Invalid JSON for NavienUser');
+    }
+
+    const { accessToken, refreshToken, expiresAt } = json as NavienSession;
+    if (!accessToken || !refreshToken || !expiresAt) {
+      throw new Error('Invalid JSON for NavienUser');
+    }
+
+    return new NavienSession(accessToken, refreshToken, expiresAt);
   }
 
   static fromResponse(response: LoginResponse): NavienSession {
-    return new NavienSession(
+    return NavienSession.from(
       response.accessToken,
       response.refreshToken,
       response.authenticationExpiresIn,
@@ -20,27 +41,19 @@ export class NavienSession {
   }
 
   static fromAuthInfo(authInfo: TokenAuthInfo, refreshToken: string): NavienSession {
-    return new NavienSession(
+    return NavienSession.from(
       authInfo.accessToken,
       refreshToken,
       authInfo.authenticationExpiresIn * 1000,
     );
   }
 
-  public get accessToken(): string {
-    return this._accessToken;
-  }
-
-  public get refreshToken(): string {
-    return this._refreshToken;
-  }
-
   public hasToken(): boolean {
-    return !!this._accessToken;
+    return !!this.accessToken;
   }
 
   public isTokenExpired(): boolean {
-    return this.expiresOn < Date.now();
+    return this.expiresAt < Date.now();
   }
 
   public hasValidToken(): boolean {

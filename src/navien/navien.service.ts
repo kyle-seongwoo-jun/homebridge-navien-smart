@@ -1,17 +1,24 @@
 import { Logger } from 'homebridge';
 
-import { NavienPlatformConfig } from '../platform';
+import { NavienHomebridgePlatform, NavienPlatformConfig } from '../platform';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
+import { NavienAuth } from './navien.auth';
+import { NavienSessionManager } from './navien.session-manager';
 
 export class NavienService {
   private readonly api: NavienApi;
+  private readonly auth: NavienAuth;
+  private readonly sessionManager: NavienSessionManager;
 
   constructor(
+    private readonly platform: NavienHomebridgePlatform,
     private readonly log: Logger,
     private readonly config: NavienPlatformConfig,
   ) {
-    this.api = new NavienApi(log, config);
+    this.auth = new NavienAuth(log);
+    this.sessionManager = new NavienSessionManager(log, this.auth, platform.createPersist(), config);
+    this.api = new NavienApi(log, this.sessionManager);
   }
 
   public async ready() {
