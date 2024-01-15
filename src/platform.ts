@@ -9,11 +9,11 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 type NavienDeviceContext = { device: Device };
 export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
 export type NavienPlatformConfig = PlatformConfig & {
-  auth_mode: 'account' | 'token';
+  authMode: 'account' | 'token';
   username: string;
   password?: string;
-  refresh_token?: string;
-  account_seq?: number;
+  refreshToken?: string;
+  accountSeq?: number;
 };
 
 /**

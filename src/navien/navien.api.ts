@@ -45,9 +45,9 @@ export class NavienApi {
   }
 
   private async _loadSessionWithConfig() {
-    const { auth_mode, username, password, account_seq, refresh_token } = this.config;
+    const { authMode, username, password, accountSeq, refreshToken } = this.config;
 
-    if (auth_mode === 'account') {
+    if (authMode === 'account') {
       // validate config
       if (!password) {
         throw ConfigurationException.empty('password');
@@ -64,34 +64,34 @@ export class NavienApi {
       };
     }
 
-    if (auth_mode === 'token') {
+    if (authMode === 'token') {
       // validate config
-      if (!account_seq) {
-        throw ConfigurationException.empty('account_seq');
+      if (!accountSeq) {
+        throw ConfigurationException.empty('accountSeq');
       }
-      if (!refresh_token) {
-        throw ConfigurationException.empty('refresh_token');
+      if (!refreshToken) {
+        throw ConfigurationException.empty('refreshToken');
       }
 
       // refresh token
-      const response = await this.auth.refreshToken(refresh_token);
+      const response = await this.auth.refreshToken(refreshToken);
       if (!response.data) {
         throw new ConfigurationException(
-          'refresh_token',
-          'refresh_token may be expired. Please login again to get new one and update your config.json',
+          'refreshToken',
+          'refreshToken may be expired. Please login again to get new one and update your config.json',
         );
       }
 
-      const session = NavienSession.fromAuthInfo(response.data.authInfo, refresh_token);
+      const session = NavienSession.fromAuthInfo(response.data.authInfo, refreshToken);
       return {
         session,
         userId: username,
-        accountSeq: account_seq,
+        accountSeq: accountSeq,
       };
     }
 
     // should not reach here
-    throw ConfigurationException.invalid('auth_mode', auth_mode, { validValue: 'account or token' });
+    throw ConfigurationException.invalid('authMode', authMode, { validValue: 'account or token' });
   }
 
   private async _request(

@@ -5,7 +5,7 @@
   "schema": {
     "type": "object",
     "properties": {
-      "auth_mode": {
+      "authMode": {
         "title": "Auth Mode",
         "type": "string",
         "default": "account",
@@ -32,21 +32,21 @@
         "title": "Password",
         "type": "string",
         "condition": {
-          "functionBody": "return model.auth_mode === 'account';"
+          "functionBody": "return model.authMode === 'account';"
         }
       },
-      "refresh_token": {
+      "refreshToken": {
         "title": "Refresh Token",
         "type": "string",
         "condition": {
-          "functionBody": "return model.auth_mode === 'token';"
+          "functionBody": "return model.authMode === 'token';"
         }
       },
-      "account_id": {
+      "accountSeq": {
         "title": "Account Seq",
         "type": "number",
         "condition": {
-          "functionBody": "return model.auth_mode === 'token';"
+          "functionBody": "return model.authMode === 'token';"
         }
       }
     }
