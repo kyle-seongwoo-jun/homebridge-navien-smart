@@ -1,6 +1,7 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 
 import ElectricMat from './homebridge/ElectricMat';
+import { ConfigurationException } from './navien/exceptions';
 import { Device } from './navien/navien.model';
 import { NavienService } from './navien/navien.service';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
@@ -46,12 +47,14 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       log.debug('Executed didFinishLaunching callback');
 
       // wait for the navien service to be ready
-      const ready = await this.navienService.ready().catch((error) => {
-        log.error('Error while waiting for Navien API to be ready:', error);
-        return false;
-      });
-      if (!ready) {
-        log.error('Navien API is not ready, please check your configuration.');
+      try {
+        await this.navienService.ready();
+      } catch (error) {
+        if (error instanceof ConfigurationException) {
+          log.error('ConfigurationError:', error.message);
+          return;
+        }
+        log.error('Navien API is not ready for unknown reason. If this error persists, please report it to the developer. error:', error);
         return;
       }
 

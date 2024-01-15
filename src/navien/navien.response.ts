@@ -4,7 +4,7 @@ export interface LoginResponse {
     loginId: string;
     clientId: string;
     accessToken: string;
-    authenticationExpiresIn: number;
+    authenticationExpiresIn: number; // milliseconds
     userSeq: number;
     refreshToken: string;
 }
@@ -12,7 +12,7 @@ export interface LoginResponse {
 export interface NavienResponse<T> {
     code: number;
     msg: string;
-    data: T;
+    data?: T;
 }
 
 export type CommonResponse = NavienResponse<never>;

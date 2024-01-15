@@ -1,6 +1,6 @@
 export interface TokenAuthInfo {
     accessToken: string;
-    authenticationExpiresIn: number; // milliseconds
+    authenticationExpiresIn: number; // seconds
 }
 
 export interface Login2Data {

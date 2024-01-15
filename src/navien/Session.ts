@@ -1,15 +1,13 @@
-import { NavienPlatformConfig } from '../platform';
+import { TokenAuthInfo } from './navien.model';
 import { LoginResponse } from './navien.response';
 
 export class Session {
-  private readonly expiresOn: number;
+  private readonly expiresOn: number; // milliseconds
 
   constructor(
       private readonly _accessToken: string,
       private readonly _refreshToken: string,
-      expiresIn: number,
-      readonly userId: string,
-      readonly accountSeq: number,
+      expiresIn: number, // milliseconds
   ) {
     this.expiresOn = (Date.now() + expiresIn);
   }
@@ -19,33 +17,14 @@ export class Session {
       response.accessToken,
       response.refreshToken,
       response.authenticationExpiresIn,
-      response.loginId,
-      response.userSeq,
     );
   }
 
-  static fromConfig(config: NavienPlatformConfig): Session | undefined {
-    if (config.auth_mode === 'token') {
-      const { username, refresh_token, account_seq } = config;
-      return new Session(
-        '',
-        refresh_token!,
-        0,
-        username,
-        account_seq!,
-      );
-    }
-
-    return undefined;
-  }
-
-  public copyWith(options: { accessToken: string; expiresIn: number }): Session {
+  static fromAuthInfo(authInfo: TokenAuthInfo, refreshToken: string): Session {
     return new Session(
-      options.accessToken,
-      this._refreshToken,
-      options.expiresIn,
-      this.userId,
-      this.accountSeq,
+      authInfo.accessToken,
+      refreshToken,
+      authInfo.authenticationExpiresIn * 1000,
     );
   }
 
@@ -62,14 +41,10 @@ export class Session {
   }
 
   public isTokenExpired(): boolean {
-    return this.expiresOn < Session.getCurrentEpoch();
+    return this.expiresOn < Date.now();
   }
 
   public hasValidToken(): boolean {
     return this.hasToken() && !this.isTokenExpired();
-  }
-
-  private static getCurrentEpoch(): number {
-    return Math.round(new Date().getTime() / 1000);
   }
 }

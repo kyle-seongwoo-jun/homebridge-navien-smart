@@ -1,82 +1,110 @@
+import assert from 'assert';
 import { Logger } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
+import { AwsSession } from '../aws/aws-session';
 import { NavienPlatformConfig } from '../platform';
 import { API_URL } from './constants';
+import { ConfigurationException } from './exceptions';
 import { NavienAuth } from './navien.auth';
-import { Device, Login2Data } from './navien.model';
-import { CommonResponse, DevicesResponse, Login2Response, ResponseCode } from './navien.response';
+import { Device } from './navien.model';
+import { CommonResponse, DevicesResponse, ResponseCode } from './navien.response';
 import { Session } from './Session';
+import { UserData } from './user-data';
 
 type RequestMethods = 'GET' | 'POST';
 
 export class NavienApi {
   private readonly auth: NavienAuth;
   private _session?: Session;
-  private _session2?: Login2Data;
+  private _awsSession?: AwsSession;
+  private _userData?: UserData;
 
   constructor(
     private readonly log: Logger,
     private readonly config: NavienPlatformConfig,
   ) {
     this.auth = new NavienAuth(log);
-    this._session = Session.fromConfig(config);
   }
 
-  public async ready(): Promise<boolean> {
-    await this.loginStep1();
-    await this.loginStep2();
+  public async ready() {
+    // load session with config
+    const { session, userId, accountSeq } = await this._loadSessionWithConfig();
 
-    return !!this._session && !!this._session2;
+    // login with session
+    const response = await this.auth.login2(session.accessToken, userId, accountSeq);
+    assert(response.data, 'No data in login2 response.');
+
+    const { familySeq, userSeq, authInfo } = response.data;
+    const awsSession = AwsSession.fromResponse(authInfo);
+    const userData = new UserData(userId, accountSeq, userSeq, familySeq);
+
+    // update session
+    this._session = session;
+    this._awsSession = awsSession;
+    this._userData = userData;
   }
 
-  private async loginStep1() {
-    // no session, login and get access token
-    if (!this._session) {
-      const { username, password } = this.config;
-      const response = await this.auth.login(username, password!);
-      this._session = Session.fromResponse(response);
+  private async _loadSessionWithConfig() {
+    const { auth_mode, username, password, account_seq, refresh_token } = this.config;
+
+    if (auth_mode === 'account') {
+      // validate config
+      if (!password) {
+        throw ConfigurationException.empty('password');
+      }
+
+      // login with username/password
+      const response = await this.auth.login(username, password);
+
+      const session = Session.fromResponse(response);
+      return {
+        session,
+        userId: response.loginId,
+        accountSeq: response.userSeq,
+      };
     }
 
-    // session exists but token expired, refresh token
-    if (this._session.isTokenExpired()) {
-      const response = await this.auth.refreshToken(this._session.refreshToken);
-      this._session = this._session.copyWith({
-        accessToken: response.data.authInfo.accessToken,
-        expiresIn: response.data.authInfo.authenticationExpiresIn,
-      });
+    if (auth_mode === 'token') {
+      // validate config
+      if (!account_seq) {
+        throw ConfigurationException.empty('account_seq');
+      }
+      if (!refresh_token) {
+        throw ConfigurationException.empty('refresh_token');
+      }
+
+      // refresh token
+      const response = await this.auth.refreshToken(refresh_token);
+      if (!response.data) {
+        throw new ConfigurationException(
+          'refresh_token',
+          'refresh_token may be expired. Please login again to get new one and update your config.json',
+        );
+      }
+
+      const session = Session.fromAuthInfo(response.data.authInfo, refresh_token);
+      return {
+        session,
+        userId: username,
+        accountSeq: account_seq,
+      };
     }
-  }
 
-  private async loginStep2() {
-    if (!this._session) {
-      throw new Error('should call loginStep1() first.');
-    }
-
-    const response = await this.request<Login2Response>('POST', '/users/secured-sign-in', {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        'userId': this._session.userId,
-        'accountSeq': this._session.accountSeq,
-      }),
-    });
-
-    const { data } = response;
-    this._session2 = data;
+    // should not reach here
+    throw ConfigurationException.invalid('auth_mode', auth_mode, { validValue: 'account or token' });
   }
 
   private async _request(
     method: RequestMethods,
     path: string,
-    options?: {
+    options: {
       headers?: HeadersInit | undefined;
       query?: Record<string, string>;
       body?: BodyInit | undefined;
-    },
+    } = {},
   ): Promise<Response> {
-    const { query, headers, body } = options || {};
+    const { query, headers, body } = options;
 
     const { accessToken } = this._session || {};
     if (!accessToken) {
@@ -130,11 +158,11 @@ export class NavienApi {
   }
 
   public async getDevices(): Promise<Device[]> {
-    if (!this._session2) {
+    if (!this._userData) {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this._session2;
+    const { familySeq, userSeq } = this._userData;
 
     const response = await this.request<DevicesResponse>('GET', '/devices', {
       query: {
@@ -142,17 +170,18 @@ export class NavienApi {
         userSeq: `${userSeq}`,
       },
     });
+    assert(response.data, 'No data in devices response.');
 
     const { devices } = response.data;
     return devices;
   }
 
   private async controlDevice(device: Device, payload: unknown) {
-    if (!this._session2) {
+    if (!this._userData) {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this._session2;
+    const { familySeq, userSeq } = this._userData;
     const { serviceCode, deviceId, deviceSeq } = device;
 
     const response = await this.request<CommonResponse>('POST', `/devices/${deviceSeq}/control`, {

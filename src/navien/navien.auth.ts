@@ -1,23 +1,23 @@
 import fetchCookie from 'fetch-cookie';
 import { Logger } from 'homebridge';
-import nodeFetch from 'node-fetch';
+import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
 import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
-import { LoginResponse, RefreshTokenResponse } from './navien.response';
+import { Login2Response, LoginResponse, RefreshTokenResponse } from './navien.response';
 
 export class NavienAuth {
   constructor(
     private readonly log: Logger,
-  ){ }
+  ) { }
 
   async login(username: string, password: string): Promise<LoginResponse> {
     this.log.debug(`Logging in with username: ${username}, password: ${password}`);
 
     // request login
     // this will redirect to /member/loginOk and it requires cookie so we use fetch-cookie
-    const fetch = fetchCookie(nodeFetch);
-    const response = await fetch(`${LOGIN_API_URL}/member/login`, {
+    const fetchWithCookies = fetchCookie(fetch);
+    const response = await fetchWithCookies(`${LOGIN_API_URL}/member/login`, {
       method: 'POST',
       headers: {
         'User-Agent': USER_AGENT,
@@ -44,10 +44,28 @@ export class NavienAuth {
     return loginResponse;
   }
 
+  async login2(accessToken: string, userId: string, accountSeq: number): Promise<Login2Response> {
+    this.log.debug(`Logging in with accessToken: ${accessToken}, userId: ${userId}, accountSeq: ${accountSeq}`);
+
+    const response = await fetch(`${API_URL}/users/secured-sign-in`, {
+      method: 'POST',
+      headers: {
+        'Authorization': accessToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        'userId': userId,
+        'accountSeq': accountSeq,
+      }),
+    });
+
+    const json = await response.json() as Login2Response;
+    return json;
+  }
+
   async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
     this.log.debug(`Refreshing token with refreshToken: ${refreshToken}`);
 
-    const fetch = nodeFetch;
     const response = await fetch(`${API_URL}/auth/token/refresh`, {
       method: 'POST',
       headers: {
