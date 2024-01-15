@@ -1,8 +1,8 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 
-import ElectricMat from './homebridge/ElectricMat';
+import ElectricMat from './homebridge/electric-mat.device';
 import { ConfigurationException } from './navien/exceptions';
-import { Device } from './navien/navien.model';
+import { Device } from './navien/interfaces';
 import { NavienService } from './navien/navien.service';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 

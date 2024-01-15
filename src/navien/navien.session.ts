@@ -1,7 +1,6 @@
-import { TokenAuthInfo } from './navien.model';
-import { LoginResponse } from './navien.response';
+import { LoginResponse, TokenAuthInfo } from './interfaces';
 
-export class Session {
+export class NavienSession {
   private readonly expiresOn: number; // milliseconds
 
   constructor(
@@ -12,16 +11,16 @@ export class Session {
     this.expiresOn = (Date.now() + expiresIn);
   }
 
-  static fromResponse(response: LoginResponse): Session {
-    return new Session(
+  static fromResponse(response: LoginResponse): NavienSession {
+    return new NavienSession(
       response.accessToken,
       response.refreshToken,
       response.authenticationExpiresIn,
     );
   }
 
-  static fromAuthInfo(authInfo: TokenAuthInfo, refreshToken: string): Session {
-    return new Session(
+  static fromAuthInfo(authInfo: TokenAuthInfo, refreshToken: string): NavienSession {
+    return new NavienSession(
       authInfo.accessToken,
       refreshToken,
       authInfo.authenticationExpiresIn * 1000,

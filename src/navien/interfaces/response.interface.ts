@@ -1,4 +1,5 @@
-import { Device, Login2Data, TokenAuthInfo } from './navien.model';
+import { Device } from './device.interface';
+import { Login2Data, TokenAuthInfo } from './login.interface';
 
 export interface LoginResponse {
     loginId: string;

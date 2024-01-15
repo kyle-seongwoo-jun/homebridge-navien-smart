@@ -1,4 +1,4 @@
-export class UserData {
+export class NavienUser {
   constructor(
     readonly userId: string,
     readonly accountSeq: number,

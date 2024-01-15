@@ -2,23 +2,22 @@ import assert from 'assert';
 import { Logger } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
-import { AwsSession } from '../aws/aws-session';
+import { AwsSession } from '../aws/aws.session';
 import { NavienPlatformConfig } from '../platform';
 import { API_URL } from './constants';
 import { ConfigurationException } from './exceptions';
+import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
 import { NavienAuth } from './navien.auth';
-import { Device } from './navien.model';
-import { CommonResponse, DevicesResponse, ResponseCode } from './navien.response';
-import { Session } from './Session';
-import { UserData } from './user-data';
+import { NavienSession } from './navien.session';
+import { NavienUser } from './navien.user';
 
 type RequestMethods = 'GET' | 'POST';
 
 export class NavienApi {
   private readonly auth: NavienAuth;
-  private _session?: Session;
+  private _session?: NavienSession;
   private _awsSession?: AwsSession;
-  private _userData?: UserData;
+  private _user?: NavienUser;
 
   constructor(
     private readonly log: Logger,
@@ -37,12 +36,12 @@ export class NavienApi {
 
     const { familySeq, userSeq, authInfo } = response.data;
     const awsSession = AwsSession.fromResponse(authInfo);
-    const userData = new UserData(userId, accountSeq, userSeq, familySeq);
+    const user = new NavienUser(userId, accountSeq, userSeq, familySeq);
 
     // update session
     this._session = session;
     this._awsSession = awsSession;
-    this._userData = userData;
+    this._user = user;
   }
 
   private async _loadSessionWithConfig() {
@@ -57,7 +56,7 @@ export class NavienApi {
       // login with username/password
       const response = await this.auth.login(username, password);
 
-      const session = Session.fromResponse(response);
+      const session = NavienSession.fromResponse(response);
       return {
         session,
         userId: response.loginId,
@@ -83,7 +82,7 @@ export class NavienApi {
         );
       }
 
-      const session = Session.fromAuthInfo(response.data.authInfo, refresh_token);
+      const session = NavienSession.fromAuthInfo(response.data.authInfo, refresh_token);
       return {
         session,
         userId: username,
@@ -158,11 +157,11 @@ export class NavienApi {
   }
 
   public async getDevices(): Promise<Device[]> {
-    if (!this._userData) {
+    if (!this._user) {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this._userData;
+    const { familySeq, userSeq } = this._user;
 
     const response = await this.request<DevicesResponse>('GET', '/devices', {
       query: {
@@ -177,11 +176,11 @@ export class NavienApi {
   }
 
   private async controlDevice(device: Device, payload: unknown) {
-    if (!this._userData) {
+    if (!this._user) {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this._userData;
+    const { familySeq, userSeq } = this._user;
     const { serviceCode, deviceId, deviceSeq } = device;
 
     const response = await this.request<CommonResponse>('POST', `/devices/${deviceSeq}/control`, {

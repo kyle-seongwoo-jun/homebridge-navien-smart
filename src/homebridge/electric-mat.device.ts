@@ -1,6 +1,6 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
-import { Device } from '../navien/navien.model';
+import { Device } from '../navien/interfaces';
 import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform';
 
 export default class ElectricMat {

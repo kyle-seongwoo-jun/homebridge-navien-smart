@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
 import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
-import { Login2Response, LoginResponse, RefreshTokenResponse } from './navien.response';
+import { Login2Response, LoginResponse, RefreshTokenResponse } from './interfaces';
 
 export class NavienAuth {
   constructor(

@@ -1,4 +1,4 @@
-import { AwsAuthInfo } from '../navien/navien.model';
+import { AwsAuthInfo } from '../navien/interfaces';
 
 export class AwsSession {
   private readonly expiresOn: number; // milliseconds

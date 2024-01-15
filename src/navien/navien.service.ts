@@ -1,19 +1,16 @@
 import { Logger } from 'homebridge';
 
 import { NavienPlatformConfig } from '../platform';
+import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
-import { NavienAuth } from './navien.auth';
-import { Device } from './navien.model';
 
 export class NavienService {
-  private readonly auth: NavienAuth;
   private readonly api: NavienApi;
 
   constructor(
     private readonly log: Logger,
     private readonly config: NavienPlatformConfig,
   ) {
-    this.auth = new NavienAuth(log);
     this.api = new NavienApi(log, config);
   }
 
