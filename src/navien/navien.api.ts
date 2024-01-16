@@ -29,10 +29,6 @@ export class NavienApi {
     return this.sessionManager.user;
   }
 
-  public async ready() {
-    await this.sessionManager.ready();
-  }
-
   private async _request(
     method: RequestMethods,
     path: string,

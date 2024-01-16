@@ -1,5 +1,6 @@
 import { Logger } from 'homebridge';
 
+import { AwsPubSub } from '../aws/pubsub';
 import { NavienHomebridgePlatform, NavienPlatformConfig } from '../platform';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
@@ -10,6 +11,7 @@ export class NavienService {
   private readonly api: NavienApi;
   private readonly auth: NavienAuth;
   private readonly sessionManager: NavienSessionManager;
+  private pubsub?: AwsPubSub;
 
   constructor(
     private readonly platform: NavienHomebridgePlatform,
@@ -22,8 +24,17 @@ export class NavienService {
   }
 
   public async ready() {
-    this.log.debug('Checking if Navien API is ready');
-    return this.api.ready();
+    this.log.debug('Ready to use Navien API');
+
+    // load session from storage or create new session
+    await this.sessionManager.ready();
+
+    // initialize aws pubsub
+    const { user, awsSession } = this.sessionManager;
+    this.pubsub = new AwsPubSub(user!.familySeq, awsSession!);
+    this.pubsub.onConnectionStateChanged((connectionState) => {
+      this.log.debug('Connection state changed:', connectionState);
+    });
   }
 
   public async getDevices() {
@@ -34,6 +45,12 @@ export class NavienService {
       return [] as Device[];
     });
     this.log.debug('Devices:', devices.map((device) => device.Properties.nickName.mainItem));
+
+    for (const device of devices) {
+      this.pubsub!.subscribeToDeviceEvent(device.deviceId, (event) => {
+        this.log.debug('Device event:', event);
+      });
+    }
 
     return devices;
   }
