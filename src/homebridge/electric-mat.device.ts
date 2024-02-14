@@ -93,17 +93,12 @@ export default class ElectricMat {
       .onGet(this.getTemperature.bind(this))
       .onSet(this.setTemperature.bind(this));
 
-    // current temperature
-    thermostat.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperature.bind(this));
-
     // subscribe to device events
     device.powerChanges.subscribe((power) => {
       thermostat.updateCharacteristic(CurrentHeatingCoolingState, power ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF);
       thermostat.updateCharacteristic(TargetHeatingCoolingState, power ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF);
     });
     device.temperatureChanges.subscribe((temperature) => {
-      thermostat.updateCharacteristic(CurrentTemperature, temperature);
       thermostat.updateCharacteristic(TargetTemperature, temperature);
     });
 
