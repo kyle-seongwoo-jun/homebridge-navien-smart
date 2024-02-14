@@ -5,6 +5,7 @@ import { NavienHomebridgePlatform, NavienPlatformConfig } from '../platform';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
 import { NavienAuth } from './navien.auth';
+import { NavienDevice } from './navien.device';
 import { NavienSessionManager } from './navien.session-manager';
 
 export class NavienService {
@@ -32,7 +33,7 @@ export class NavienService {
     // initialize aws pubsub
     const { user, awsSession } = this.sessionManager;
     this.pubsub = new AwsPubSub(user!.familySeq, awsSession!);
-    this.pubsub.onConnectionStateChanged((connectionState) => {
+    this.pubsub.connectionStateChanges().subscribe((connectionState) => {
       this.log.debug('Connection state changed:', connectionState);
     });
   }
@@ -47,7 +48,7 @@ export class NavienService {
     this.log.debug('Devices:', devices.map((device) => device.Properties.nickName.mainItem));
 
     for (const device of devices) {
-      this.pubsub!.subscribeToDeviceEvent(device.deviceId, (event) => {
+      this.pubsub!.deviceStatusChanges(device.deviceId).subscribe((event) => {
         this.log.debug('Device event:', event);
       });
     }
