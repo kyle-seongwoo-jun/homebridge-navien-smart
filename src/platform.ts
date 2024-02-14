@@ -53,7 +53,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
         await this.navienService.ready();
       } catch (error) {
         if (error instanceof ConfigurationException) {
-          log.error('ConfigurationError:', error.message);
+          log.error('ConfigurationException:', error.message);
           return;
         }
         log.error('Navien API is not ready for unknown reason. If this error persists, please report it to the developer. error:', error);

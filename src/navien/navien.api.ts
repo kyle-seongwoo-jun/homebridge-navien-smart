@@ -4,6 +4,7 @@ import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
 import { AwsSession } from '../aws/aws.session';
 import { API_URL } from './constants';
+import { ApiException } from './exceptions';
 import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
 import { NavienSession } from './navien.session';
 import { NavienSessionManager } from './navien.session-manager';
@@ -74,7 +75,7 @@ export class NavienApi {
     const response = await this._request(method, path, options);
 
     if (!response.ok) {
-      const json = await response.json();
+      const json = await response.json() as CommonResponse;
       if (response.status === 401) {
         // login detected from another device
         // TODO: re-login and retry
@@ -85,7 +86,7 @@ export class NavienApi {
         // TODO: refresh token and retry
         this.log.warn('Token expired. We will refresh token and retry.', json);
       }
-      throw new Error(json.msg);
+      throw ApiException.from(json);
     }
 
     return response.json() as T;
@@ -133,7 +134,10 @@ export class NavienApi {
       }).replace(/\\\\/g, '\\'), // \\/ -> \/ in topic
     });
 
-    return response.code === ResponseCode.SUCCESS;
+    // validate response
+    if (response.code !== ResponseCode.SUCCESS) {
+      throw ApiException.from(response);
+    }
   }
 
   public setPower(device: Device, power: boolean) {

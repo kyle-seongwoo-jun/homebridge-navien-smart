@@ -5,7 +5,7 @@ export class ConfigurationException extends Error {
   ) {
     super(message);
 
-    this.name = 'ConfigurationError';
+    this.name = 'ConfigurationException';
 
     // Maintaining proper stack trace for where our error was thrown (only available on V8)
     if (Error.captureStackTrace) {
