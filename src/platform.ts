@@ -2,7 +2,7 @@ import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, 
 import path from 'path';
 
 import ElectricMat from './homebridge/electric-mat.device';
-import { ConfigurationException } from './navien/exceptions';
+import { AuthException, ConfigurationException } from './navien/exceptions';
 import { NavienDevice } from './navien/navien.device';
 import { NavienService } from './navien/navien.service';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
@@ -70,6 +70,10 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     } catch (error) {
       if (error instanceof ConfigurationException) {
         this.log.error('ConfigurationException:', error.message);
+        return;
+      }
+      if (error instanceof AuthException) {
+        this.log.error('AuthException:', error.message);
         return;
       }
       this.log.error(

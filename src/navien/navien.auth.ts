@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
 import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
+import { AuthException } from './exceptions';
 import { CommonResponse, Login2Response, LoginResponse, RefreshTokenResponse } from './interfaces';
 
 export class NavienAuth {
@@ -34,13 +35,15 @@ export class NavienAuth {
     const html = await response.text();
 
     // extract json from html
-    const jsonLine = html.split('\n').filter(line => line.includes('var message = '))[0].trim();
-    const index1 = jsonLine.indexOf('{');
-    const index2 = jsonLine.lastIndexOf('}');
-    const json = jsonLine.substring(index1, index2 + 1);
+    const jsonString = this._extractJsonFromHtml(html);
+
+    // throw exception if json is not found
+    if (!jsonString) {
+      throw new AuthException('Username or password is incorrect.');
+    }
 
     // parse json
-    const loginResponse = JSON.parse(json) as LoginResponse;
+    const loginResponse = JSON.parse(jsonString) as LoginResponse;
     return loginResponse;
   }
 
@@ -92,5 +95,18 @@ export class NavienAuth {
 
     const json = await response.json() as CommonResponse;
     return json;
+  }
+
+  private _extractJsonFromHtml(html: string): string | undefined {
+    const jsonLines = html.split('\n').filter(line => line.includes('var message = '));
+    if (jsonLines.length === 0) {
+      return undefined;
+    }
+
+    const jsonLine = jsonLines[0].trim();
+    const index1 = jsonLine.indexOf('{');
+    const index2 = jsonLine.lastIndexOf('}');
+    const jsonString = jsonLine.substring(index1, index2 + 1);
+    return jsonString;
   }
 }
