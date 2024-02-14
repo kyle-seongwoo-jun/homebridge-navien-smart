@@ -40,7 +40,7 @@ export class NavienDevice {
   }
 
   get modelName() {
-    return this.json.modelCode;
+    return this.json.modelName;
   }
 
   get name() {
