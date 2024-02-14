@@ -13,6 +13,23 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch CLI",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${workspaceFolder}/dist/cli/index.js",
+      "args": [
+        "<username>",
+        "<password>",
+      ],
+      "preLaunchTask": "tsc: build - tsconfig.json",
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ]
     }
   ]
 }

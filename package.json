@@ -17,6 +17,9 @@
     "homebridge": "^1.6.0"
   },
   "main": "dist/index.js",
+  "bin": {
+    "navien": "./bin/navien"
+  },
   "scripts": {
     "lint": "eslint src/**.ts --max-warnings=0 --fix",
     "watch": "npm run build && npm link && nodemon",
