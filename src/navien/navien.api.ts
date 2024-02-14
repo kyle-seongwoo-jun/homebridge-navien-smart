@@ -111,13 +111,13 @@ export class NavienApi {
     return devices;
   }
 
-  private async controlDevice(device: Device, payload: unknown) {
+  private async controlDevice(device: Device, payload?: Record<string, unknown>) {
     if (!this.user) {
       throw new Error('should call ready() first.');
     }
 
     const { familySeq, userSeq } = this.user;
-    const { serviceCode, deviceId, deviceSeq } = device;
+    const { serviceCode, deviceId, deviceSeq, modelCode } = device;
 
     const response = await this.request<CommonResponse>('POST', `/devices/${deviceSeq}/control`, {
       query: {
@@ -130,7 +130,16 @@ export class NavienApi {
       body: JSON.stringify({
         serviceCode: serviceCode,
         topic: `$aws\\/things\\/${deviceId}\\/shadow\\/name\\/status\\/update`,
-        payload: payload,
+        payload: {
+          state: {
+            desired: {
+              event: {
+                modelCode: parseInt(modelCode),
+              },
+              ...payload,
+            },
+          },
+        },
       }).replace(/\\\\/g, '\\'), // \\/ -> \/ in topic
     });
 
@@ -140,24 +149,19 @@ export class NavienApi {
     }
   }
 
-  public setPower(device: Device, power: boolean) {
-    const { modelCode } = device;
 
+  public initializeDevice(device: Device) {
+    return this.controlDevice(device);
+  }
+
+  public setPower(device: Device, power: boolean) {
     return this.controlDevice(device, {
-      state: {
-        desired: {
-          event: {
-            modelCode: parseInt(modelCode),
-          },
-          operationMode: power ? 1 : 0,
-        },
-      },
+      operationMode: power ? 1 : 0,
     });
   }
 
   public setTemperature(device: Device, temperature: number) {
     const {
-      modelCode,
       Properties: {
         registry: {
           attributes: {
@@ -179,24 +183,17 @@ export class NavienApi {
     }
 
     return this.controlDevice(device, {
-      state: {
-        desired: {
-          event: {
-            modelCode: parseInt(modelCode),
+      heater: {
+        left: {
+          enable: true,
+          temperature: {
+            set: temperature,
           },
-          heater: {
-            left: {
-              enable: true,
-              temperature: {
-                set: temperature,
-              },
-            },
-            right: {
-              enable: true,
-              temperature: {
-                set: temperature,
-              },
-            },
+        },
+        right: {
+          enable: true,
+          temperature: {
+            set: temperature,
           },
         },
       },
