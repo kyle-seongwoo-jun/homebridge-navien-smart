@@ -1,5 +1,5 @@
 {
-  "private": true,
+  "private": false,
   "displayName": "Navien Smart",
   "name": "homebridge-navien-smart",
   "version": "1.0.0",
