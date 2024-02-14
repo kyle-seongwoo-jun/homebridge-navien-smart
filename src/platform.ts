@@ -3,12 +3,12 @@ import path from 'path';
 
 import ElectricMat from './homebridge/electric-mat.device';
 import { ConfigurationException } from './navien/exceptions';
-import { Device } from './navien/interfaces';
+import { NavienDevice } from './navien/navien.device';
 import { NavienService } from './navien/navien.service';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { Persist } from './utils/persist.util';
 
-type NavienDeviceContext = { device: Device };
+type NavienDeviceContext = { device: NavienDevice };
 export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
 export type NavienPlatformConfig = PlatformConfig & {
   authMode: 'account' | 'token';
@@ -41,31 +41,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
     this.navienService = new NavienService(this, log, config as NavienPlatformConfig);
 
-    // When this event is fired it means Homebridge has restored all cached accessories from disk.
-    // Dynamic Platform plugins should only register new accessories after this event was fired,
-    // in order to ensure they weren't added to homebridge already. This event can also be used
-    // to start discovery of new accessories.
-    this.api.on('didFinishLaunching', async () => {
-      log.debug('Executed didFinishLaunching callback');
-
-      // wait for the navien service to be ready
-      try {
-        await this.navienService.ready();
-      } catch (error) {
-        if (error instanceof ConfigurationException) {
-          log.error('ConfigurationError:', error.message);
-          return;
-        }
-        log.error('Navien API is not ready for unknown reason. If this error persists, please report it to the developer. error:', error);
-        return;
-      }
-
-      // run the method to discover / register your devices as accessories
-      const devices = await this.navienService.getDevices();
-      for (const device of devices) {
-        this.registerDeviceAsAccessory(device);
-      }
-    });
+    this.api.on('didFinishLaunching', this.onLaunched);
   }
 
   /**
@@ -79,11 +55,42 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     this.accessories.push(accessory as NavienPlatformAccessory);
   }
 
-  registerDeviceAsAccessory(device: Device) {
+  /**
+   * When this event is fired it means Homebridge has restored all cached accessories from disk.
+   * Dynamic Platform plugins should only register new accessories after this event was fired,
+   * in order to ensure they weren't added to homebridge already. This event can also be used
+   * to start discovery of new accessories.
+   */
+  onLaunched = async () => {
+    this.log.debug('Executed didFinishLaunching callback');
+
+    // wait for the navien service to be ready
+    try {
+      await this.navienService.ready();
+    } catch (error) {
+      if (error instanceof ConfigurationException) {
+        this.log.error('ConfigurationException:', error.message);
+        return;
+      }
+      this.log.error(
+        'Navien API is not ready for unknown reason. If this error persists, please report it to the developer. error:',
+        error,
+      );
+      return;
+    }
+
+    // run the method to discover / register your devices as accessories
+    const devices = await this.navienService.getDevices();
+    for (const device of devices) {
+      this.registerDeviceAsAccessory(device);
+    }
+  };
+
+  registerDeviceAsAccessory(device: NavienDevice) {
     // generate a unique id for the accessory this should be generated from
     // something globally unique, but constant, for example, the device serial
     // number or MAC address
-    const uuid = this.api.hap.uuid.generate(device.deviceId);
+    const uuid = this.api.hap.uuid.generate(device.id);
 
     // see if an accessory with the same uuid has already been registered and restored from
     // the cached devices we stored in the `configureAccessory` method above
@@ -94,8 +101,8 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
       // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
-      // existingAccessory.context.device = device;
-      // this.api.updatePlatformAccessories([existingAccessory]);
+      existingAccessory.context.device = device;
+      this.api.updatePlatformAccessories([existingAccessory]);
 
       // create the accessory handler for the restored accessory
       // this is imported from `platformAccessory.ts`
@@ -107,15 +114,14 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
     } else {
       // the accessory does not yet exist, so we need to create it
-      const name = device.Properties.nickName.mainItem;
-      this.log.info('Adding new accessory:', name);
+      this.log.info('Adding new accessory:', device.name);
 
       // create a new accessory
-      const accessory = new this.api.platformAccessory<NavienDeviceContext>(name, uuid);
+      const accessory = new this.api.platformAccessory<NavienDeviceContext>(device.name, uuid);
 
       // store a copy of the device object in the `accessory.context`
       // the `context` property can be used to store any data about the accessory you may need
-      accessory.context.device = device as Device;
+      accessory.context.device = device;
 
       // create the accessory handler for the newly create accessory
       // this is imported from `platformAccessory.ts`

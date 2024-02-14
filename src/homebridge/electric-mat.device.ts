@@ -1,16 +1,15 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
-import { Device } from '../navien/interfaces';
+import { NavienDevice } from '../navien/navien.device';
+import { NavienService } from '../navien/navien.service';
 import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform';
 
 export default class ElectricMat {
-  private thermostat: Service;
-  private VALID_HEATING_STATES: number[];
+  private readonly VALID_HEATING_STATES: number[];
 
-  private exampleStates = {
-    heatingState: this.platform.Characteristic.CurrentHeatingCoolingState.OFF,
-    temperature: 35,
-  };
+  private readonly thermostat: Service;
+  private readonly service: NavienService;
+  private readonly device: NavienDevice;
 
   constructor(
     private readonly platform: NavienHomebridgePlatform,
@@ -21,13 +20,17 @@ export default class ElectricMat {
       Service,
     } = this.platform;
 
+    const { navienService } = this.platform;
+    this.service = navienService;
+
     const { device } = accessory.context;
+    this.device = device;
 
     // set accessory information
     this.accessory.getService(Service.AccessoryInformation)!
       .setCharacteristic(Characteristic.Manufacturer, 'Navien')
       .setCharacteristic(Characteristic.Model, device.modelName)
-      .setCharacteristic(Characteristic.SerialNumber, device.deviceId);
+      .setCharacteristic(Characteristic.SerialNumber, device.id);
 
     // set thermostat information
     this.VALID_HEATING_STATES = [
@@ -37,7 +40,11 @@ export default class ElectricMat {
     this.thermostat = this.initializeThermostat(device);
   }
 
-  initializeThermostat(device: Device): Service {
+  private get log() {
+    return this.platform.log;
+  }
+
+  initializeThermostat(device: NavienDevice): Service {
     const {
       Characteristic: {
         Name,
@@ -56,9 +63,8 @@ export default class ElectricMat {
       || this.accessory.addService(Thermostat);
 
     // name, temp unit
-    const name = device.Properties.nickName.mainItem;
     thermostat
-      .setCharacteristic(Name, name)
+      .setCharacteristic(Name, device.name)
       .setCharacteristic(TemperatureDisplayUnits, TemperatureDisplayUnits.CELSIUS);
 
     // current state
@@ -77,7 +83,7 @@ export default class ElectricMat {
       .onSet(this.setHeatingState.bind(this));
 
     // target temperature
-    const { heatControl } = device.Properties.registry.attributes.functions;
+    const { heatControl } = device.functions;
     thermostat.getCharacteristic(TargetTemperature)
       .setProps({
         minValue: heatControl.rangeMin,
@@ -91,39 +97,42 @@ export default class ElectricMat {
     thermostat.getCharacteristic(CurrentTemperature)
       .onGet(this.getTemperature.bind(this));
 
+    // subscribe to device events
+    device.powerChanges.subscribe((power) => {
+      thermostat.updateCharacteristic(CurrentHeatingCoolingState, power ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF);
+      thermostat.updateCharacteristic(TargetHeatingCoolingState, power ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF);
+    });
+    device.temperatureChanges.subscribe((temperature) => {
+      thermostat.updateCharacteristic(CurrentTemperature, temperature);
+      thermostat.updateCharacteristic(TargetTemperature, temperature);
+    });
+
     return thermostat;
   }
 
   async getHeatingState(): Promise<CharacteristicValue> {
-    // TODO: implement your own code to check if the device is on
-    const state = this.exampleStates.heatingState;
+    const { Characteristic } = this.platform;
+    const { power } = this.device;
 
-    this.platform.log.debug('Get Heating State:', state ? 'ON' : 'OFF');
+    this.log.debug('Get Heating State:', power ? 'ON' : 'OFF');
 
+    const state = power ? Characteristic.CurrentHeatingCoolingState.HEAT : Characteristic.CurrentHeatingCoolingState.OFF;
     return state;
   }
 
   async setHeatingState(value: CharacteristicValue) {
     const state = value as number;
-    const { navienService } = this.platform;
-    const { device } = this.accessory.context;
+    const power = !!state;
 
-    this.platform.log.debug('Set Heating State:', state ? 'ON' : 'OFF');
+    this.log.debug('Set Heating State:', power ? 'ON' : 'OFF');
 
-    navienService.setPower(device, !!state);
-
-    // TODO: implement your own code to turn your device on/off
-    this.exampleStates.heatingState = state;
+    await this.service.setPower(this.device, power);
   }
 
   async getTemperature(): Promise<CharacteristicValue> {
-    // implement your own code to check the temperature
-    const temperature = this.exampleStates.temperature;
+    const { temperature } = this.device;
 
-    this.platform.log.debug('Get Temperature:', temperature);
-
-    // if you need to return an error to show the device as "Not Responding" in the Home app:
-    // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    this.log.debug('Get Temperature:', temperature);
 
     return temperature;
   }
@@ -131,14 +140,8 @@ export default class ElectricMat {
   async setTemperature(value: CharacteristicValue) {
     const temperature = value as number;
 
-    this.platform.log.debug('Set Temperature:', temperature);
+    this.log.debug('Set Temperature:', temperature);
 
-    const { navienService } = this.platform;
-    const { device } = this.accessory.context;
-
-    navienService.setTemperature(device, temperature);
-
-    // implement your own code to set the brightness
-    this.exampleStates.temperature = temperature;
+    await this.service.setTemperature(this.device, temperature);
   }
 }

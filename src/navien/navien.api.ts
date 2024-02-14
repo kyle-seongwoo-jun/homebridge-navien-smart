@@ -4,6 +4,7 @@ import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
 import { AwsSession } from '../aws/aws.session';
 import { API_URL } from './constants';
+import { ApiException } from './exceptions';
 import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
 import { NavienSession } from './navien.session';
 import { NavienSessionManager } from './navien.session-manager';
@@ -27,10 +28,6 @@ export class NavienApi {
 
   private get user(): NavienUser | undefined {
     return this.sessionManager.user;
-  }
-
-  public async ready() {
-    await this.sessionManager.ready();
   }
 
   private async _request(
@@ -78,7 +75,7 @@ export class NavienApi {
     const response = await this._request(method, path, options);
 
     if (!response.ok) {
-      const json = await response.json();
+      const json = await response.json() as CommonResponse;
       if (response.status === 401) {
         // login detected from another device
         // TODO: re-login and retry
@@ -89,7 +86,7 @@ export class NavienApi {
         // TODO: refresh token and retry
         this.log.warn('Token expired. We will refresh token and retry.', json);
       }
-      throw new Error(json.msg);
+      throw ApiException.from(json);
     }
 
     return response.json() as T;
@@ -114,13 +111,13 @@ export class NavienApi {
     return devices;
   }
 
-  private async controlDevice(device: Device, payload: unknown) {
+  private async controlDevice(device: Device, payload?: Record<string, unknown>) {
     if (!this.user) {
       throw new Error('should call ready() first.');
     }
 
     const { familySeq, userSeq } = this.user;
-    const { serviceCode, deviceId, deviceSeq } = device;
+    const { serviceCode, deviceId, deviceSeq, modelCode } = device;
 
     const response = await this.request<CommonResponse>('POST', `/devices/${deviceSeq}/control`, {
       query: {
@@ -133,31 +130,38 @@ export class NavienApi {
       body: JSON.stringify({
         serviceCode: serviceCode,
         topic: `$aws\\/things\\/${deviceId}\\/shadow\\/name\\/status\\/update`,
-        payload: payload,
+        payload: {
+          state: {
+            desired: {
+              event: {
+                modelCode: parseInt(modelCode),
+              },
+              ...payload,
+            },
+          },
+        },
       }).replace(/\\\\/g, '\\'), // \\/ -> \/ in topic
     });
 
-    return response.code === ResponseCode.SUCCESS;
+    // validate response
+    if (response.code !== ResponseCode.SUCCESS) {
+      throw ApiException.from(response);
+    }
+  }
+
+
+  public initializeDevice(device: Device) {
+    return this.controlDevice(device);
   }
 
   public setPower(device: Device, power: boolean) {
-    const { modelCode } = device;
-
     return this.controlDevice(device, {
-      state: {
-        desired: {
-          event: {
-            modelCode: parseInt(modelCode),
-          },
-          operationMode: power ? 1 : 0,
-        },
-      },
+      operationMode: power ? 1 : 0,
     });
   }
 
   public setTemperature(device: Device, temperature: number) {
     const {
-      modelCode,
       Properties: {
         registry: {
           attributes: {
@@ -179,24 +183,17 @@ export class NavienApi {
     }
 
     return this.controlDevice(device, {
-      state: {
-        desired: {
-          event: {
-            modelCode: parseInt(modelCode),
+      heater: {
+        left: {
+          enable: true,
+          temperature: {
+            set: temperature,
           },
-          heater: {
-            left: {
-              enable: true,
-              temperature: {
-                set: temperature,
-              },
-            },
-            right: {
-              enable: true,
-              temperature: {
-                set: temperature,
-              },
-            },
+        },
+        right: {
+          enable: true,
+          temperature: {
+            set: temperature,
           },
         },
       },

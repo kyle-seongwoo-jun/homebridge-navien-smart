@@ -1,7 +1,7 @@
 import { AwsAuthInfo } from '../navien/interfaces';
 
 export class AwsSession {
-  private readonly expiresOn: number; // milliseconds
+  private readonly expiresAt: number; // milliseconds
 
   constructor(
       readonly accessKeyId: string,
@@ -9,7 +9,7 @@ export class AwsSession {
       readonly sessionToken: string,
       expiresIn: number, // milliseconds
   ) {
-    this.expiresOn = (Date.now() + expiresIn);
+    this.expiresAt = (Date.now() + expiresIn);
   }
 
   static fromResponse(response: AwsAuthInfo): AwsSession {
@@ -22,7 +22,7 @@ export class AwsSession {
   }
 
   public isTokenExpired(): boolean {
-    return this.expiresOn < Date.now();
+    return this.expiresAt < Date.now();
   }
 
   public hasValidToken(): boolean {
