@@ -62,7 +62,7 @@ npm i -g homebridge-navien-smart
 
 비밀번호를 설정 파일에 넣고 싶지 않은 경우 `authMode`를 `token`으로 설정하고 대신 `refreshToken`과 `accountSeq`를 사용할 수 있습니다.
 
-해당 값들은 `navien` CLI로 얻을 수 있습니다. 자세한 내용은 [CLI 사용](#cli-사용방법)을 참조하세요.
+해당 값들은 `navien` CLI로 얻을 수 있습니다. 자세한 내용은 [CLI 사용방법](#cli-사용방법)을 참조하세요.
 
 ## 구현 상태
 
