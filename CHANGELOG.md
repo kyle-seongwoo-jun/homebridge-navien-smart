@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.1.0...v1.2.0) (2024-02-15)
+
+
+### Features
+
+* add showCurrentTemperatureAsTarget option to config ([#5](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/5)) ([91c0682](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/91c0682f693f6fd29e1a43da0fe2490cdc54284b))
+
 ## [1.1.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.0.1...v1.1.0) (2024-02-15)
 
 
