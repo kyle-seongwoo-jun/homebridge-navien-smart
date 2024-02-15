@@ -16,6 +16,7 @@ export type NavienPlatformConfig = PlatformConfig & {
   password?: string;
   refreshToken?: string;
   accountSeq?: number;
+  showCurrentTemperatureAsTarget: boolean;
 };
 
 /**
@@ -30,16 +31,18 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: NavienPlatformAccessory[] = [];
 
+  public readonly config: NavienPlatformConfig;
   public readonly navienService: NavienService;
 
   constructor(
     public readonly log: Logger,
-    public readonly config: PlatformConfig,
+    config: PlatformConfig,
     public readonly api: API,
   ) {
     this.log.debug('Finished initializing platform:', config.platform);
 
-    this.navienService = new NavienService(this, log, config as NavienPlatformConfig);
+    this.config = config as NavienPlatformConfig;
+    this.navienService = new NavienService(this, log);
 
     this.api.on('didFinishLaunching', this.onLaunched);
   }

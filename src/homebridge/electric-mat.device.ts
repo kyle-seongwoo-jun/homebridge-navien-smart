@@ -149,7 +149,15 @@ export default class ElectricMat {
 
   async getCurrentTemperature(): Promise<CharacteristicValue> {
     // this device does not support to get current temperature
-    // so, throw an error to indicate that the operation is not supported
+
+    // if the user wants to show the current temperature as the target temperature,
+    // we can return the current temperature as the target temperature
+    if (this.platform.config.showCurrentTemperatureAsTarget) {
+      return this.getTemperature();
+    }
+
+    // if the user does not want to show the current temperature as the target temperature,
+    // we should throw an error to indicate that the current temperature is not supported
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     throw new HapStatusError(HAPStatus.NOT_ALLOWED_IN_CURRENT_STATE);
   }
