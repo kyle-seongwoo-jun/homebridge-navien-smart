@@ -50,7 +50,6 @@ export default class ElectricMat {
         Name,
         CurrentHeatingCoolingState,
         TargetHeatingCoolingState,
-        CurrentTemperature,
         TargetTemperature,
         TemperatureDisplayUnits,
       },
