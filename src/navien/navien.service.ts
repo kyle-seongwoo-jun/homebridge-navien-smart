@@ -1,3 +1,4 @@
+import { ConnectionState } from '@aws-amplify/pubsub';
 import { Logger } from 'homebridge';
 
 import { AwsPubSub } from '../aws/pubsub';
@@ -33,9 +34,16 @@ export class NavienService {
 
     // initialize aws pubsub
     const { user, awsSession } = this.sessionManager;
-    this.pubsub = new AwsPubSub(user!.familySeq, awsSession!);
-    this.pubsub.connectionStateChanges().subscribe((connectionState) => {
-      this.log.debug('Connection state changed:', connectionState);
+    const pubsub = this.pubsub = new AwsPubSub(user!.familySeq, awsSession!);
+    pubsub.connectionStateChanges().subscribe(async (connectionState) => {
+      this.log.debug('[AWS PubSub] Connection state changed:', connectionState);
+
+      // refresh aws session and reconnect if connection is disrupted
+      if (connectionState === ConnectionState.ConnectionDisrupted) {
+        this.log.info('[AWS PubSub] Refreshing AWS session and reconnecting...');
+        const newSession = await this.sessionManager.refreshAwsSession();
+        pubsub.setSession(newSession);
+      }
     });
   }
 

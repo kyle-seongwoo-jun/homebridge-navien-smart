@@ -59,6 +59,23 @@ export class NavienSessionManager {
     ]);
   }
 
+  public async refreshAwsSession() {
+    if (!this._session || !this._user) {
+      throw new Error('Please call ready() first.');
+    }
+
+    const { accessToken } = this._session;
+    const { userId, accountSeq } = this._user;
+    const response = await this.auth.login2(accessToken, userId, accountSeq);
+    assert(response.data, 'No data in login2 response.');
+
+    const { authInfo } = response.data;
+    const awsSession = AwsSession.fromResponse(authInfo);
+
+    this._awsSession = awsSession;
+    return awsSession;
+  }
+
   private async _loadSession() {
     let session: NavienSession;
     let userId: string;
