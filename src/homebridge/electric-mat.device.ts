@@ -151,6 +151,6 @@ export default class ElectricMat {
     // this device does not support to get current temperature
     // so, throw an error to indicate that the operation is not supported
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    throw new HapStatusError(HAPStatus.NOT_ALLOWED_IN_CURRENT_STATE);
   }
 }
