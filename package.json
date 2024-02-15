@@ -21,7 +21,7 @@
     "navien": "./bin/navien"
   },
   "scripts": {
-    "lint": "eslint src/**.ts --max-warnings=0 --fix",
+    "lint": "eslint src/**/*.ts --max-warnings=0 --fix",
     "watch": "npm run build && npm link && nodemon",
     "build": "rimraf ./dist && tsc",
     "test": "jest",

@@ -15,7 +15,21 @@
             "presentation": {
                 "reveal": "silent",
                 "close": true
-            }
+            },
+            "dependsOn": [
+                "eslint: lint whole folder"
+            ]
+        },
+        {
+            "label": "eslint: lint whole folder",
+            "type": "eslint",
+            "problemMatcher": [
+                "$eslint-stylish"
+            ],
+            "presentation": {
+                "reveal": "silent",
+                "close": true
+            },
         }
     ]
 }
