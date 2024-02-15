@@ -50,6 +50,7 @@ export default class ElectricMat {
         Name,
         CurrentHeatingCoolingState,
         TargetHeatingCoolingState,
+        CurrentTemperature,
         TargetTemperature,
         TemperatureDisplayUnits,
       },
@@ -62,9 +63,12 @@ export default class ElectricMat {
       || this.accessory.addService(Thermostat);
 
     // name, temp unit
-    thermostat
-      .setCharacteristic(Name, device.name)
-      .setCharacteristic(TemperatureDisplayUnits, TemperatureDisplayUnits.CELSIUS);
+    thermostat.setCharacteristic(Name, device.name);
+    thermostat.getCharacteristic(TemperatureDisplayUnits)
+      .setProps({
+        validValues: [TemperatureDisplayUnits.CELSIUS],
+      })
+      .setValue(TemperatureDisplayUnits.CELSIUS);
 
     // current state
     thermostat.getCharacteristic(CurrentHeatingCoolingState)
@@ -91,6 +95,10 @@ export default class ElectricMat {
       })
       .onGet(this.getTemperature.bind(this))
       .onSet(this.setTemperature.bind(this));
+
+    // current temperature
+    thermostat.getCharacteristic(CurrentTemperature)
+      .onGet(this.getCurrentTemperature.bind(this));
 
     // subscribe to device events
     device.powerChanges.subscribe((power) => {
@@ -137,5 +145,12 @@ export default class ElectricMat {
     this.log.debug('Set Temperature:', temperature);
 
     await this.service.setTemperature(this.device, temperature);
+  }
+
+  async getCurrentTemperature(): Promise<CharacteristicValue> {
+    // this device does not support to get current temperature
+    // so, throw an error to indicate that the operation is not supported
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
+    throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
   }
 }
