@@ -14,6 +14,8 @@
 
 ## Overview
 
+![demo](https://raw.githubusercontent.com/kyle-seongwoo-jun/homebridge-navien-smart/latest/docs/demo.jpg)
+
 Homebridge plugin to control Navien devices via Navien Smart.
 
 A plugin for interacting with the "Navien Smart" system, which can control Navien devices. API used in this plugin is not official, I reversed from their "Navien Smart" mobile app.
@@ -90,3 +92,13 @@ accountSeq: 12345678
 ```
 
 You can copy and paste `refreshToken` and `accountSeq` to your config.
+
+## Demo
+
+### Siri (Voice Control)
+
+[![siri demo](https://img.youtube.com/vi/FpLxOSHVeKw/0.jpg)](https://youtu.be/FpLxOSHVeKw)
+
+### Widget (Home app / Control Center)
+
+[![widget demo](https://img.youtube.com/vi/lCtJF57DZQk/0.jpg)](https://youtu.be/lCtJF57DZQk)
