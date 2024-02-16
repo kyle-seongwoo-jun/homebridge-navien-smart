@@ -14,6 +14,8 @@
 
 ## 둘러보기
 
+![demo](https://raw.githubusercontent.com/kyle-seongwoo-jun/homebridge-navien-smart/latest/docs/demo.jpg)
+
 나비엔 스마트를 통해 나비엔 기기를 제어하는 플러그인.
 
 "나비엔 스마트" 시스템과 상호 작용하는 플러그인으로, 나비엔 기기를 제어할 수 있습니다. 이 플러그인에서 사용된 API는 공식적이지 않으며, "나비엔 스마트" 모바일 앱에서 리버싱을 통해 얻었습니다.
@@ -90,3 +92,13 @@ accountSeq: 12345678
 ```
 
 `refreshToken`과 `accountSeq`를 복사하여 설정 파일에 붙여넣으면 됩니다.
+
+## 데모 영상
+
+### 시리 (음성 제어)
+
+[![siri demo](https://img.youtube.com/vi/FpLxOSHVeKw/0.jpg)](https://youtu.be/FpLxOSHVeKw)
+
+### 위젯 (홈 앱 / 컨트롤 센터)
+
+[![widget demo](https://img.youtube.com/vi/lCtJF57DZQk/0.jpg)](https://youtu.be/lCtJF57DZQk)
