@@ -1,19 +1,11 @@
-export class ConfigurationException extends Error {
+import { NavienException } from './navien.exception';
+
+export class ConfigurationException extends NavienException {
   constructor(
     readonly propertyName: string,
     message: string,
   ) {
     super(message);
-
-    this.name = 'ConfigurationException';
-
-    // Maintaining proper stack trace for where our error was thrown (only available on V8)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ConfigurationException);
-    }
-
-    // ES5 compatible
-    Object.setPrototypeOf(this, ConfigurationException.prototype);
   }
 
   static empty(propertyName: string): ConfigurationException {

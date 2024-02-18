@@ -4,8 +4,8 @@ import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
 import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
-import { AuthException } from './exceptions';
-import { CommonResponse, Login2Response, LoginResponse, RefreshTokenResponse } from './interfaces';
+import { ApiException, AuthException } from './exceptions';
+import { CommonResponse, Login2Response, LoginResponse, RefreshTokenResponse, ResponseCode } from './interfaces';
 
 export class NavienAuth {
   constructor(
@@ -66,6 +66,10 @@ export class NavienAuth {
     });
 
     const json = await response.json() as Login2Response;
+    if (json.code !== ResponseCode.SUCCESS) {
+      throw ApiException.from(json);
+    }
+
     return json;
   }
 

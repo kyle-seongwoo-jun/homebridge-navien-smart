@@ -2,7 +2,6 @@ import assert from 'assert';
 import { Logger } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
-import { AwsSession } from '../aws/aws.session';
 import { API_URL } from './constants';
 import { ApiException } from './exceptions';
 import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
@@ -20,10 +19,6 @@ export class NavienApi {
 
   private get session(): NavienSession | undefined {
     return this.sessionManager.session;
-  }
-
-  private get awsSession(): AwsSession | undefined {
-    return this.sessionManager.awsSession;
   }
 
   private get user(): NavienUser | undefined {
@@ -76,15 +71,18 @@ export class NavienApi {
 
     if (!response.ok) {
       const json = await response.json() as CommonResponse;
-      if (response.status === 401) {
-        // login detected from another device
-        // TODO: re-login and retry
-        this.log.warn('Login detected from another device. We will re-login and retry.', json);
+      // login detected from another device
+      if (json.code === ResponseCode.COMMON_NOT_AUTHORIZED) {
+        this.log.error('Login detected from another device.');
+        // TODO: re-login and retry if authMode is 'account'
       }
-      if (response.status === 403) {
-        // token expired
-        // TODO: refresh token and retry
-        this.log.warn('Token expired. We will refresh token and retry.', json);
+      // token expired
+      if (json.code === ResponseCode.COMMON_TOKEN_EXPIRED) {
+        this.log.warn('Token expired. We will refresh token and retry.');
+
+        // refresh token and retry
+        await this.sessionManager.refreshSession();
+        return await this.request(method, path, options);
       }
       throw ApiException.from(json);
     }

@@ -1,21 +1,12 @@
 import { NavienResponse } from '../interfaces';
+import { NavienException } from './navien.exception';
 
-export class ApiException<T> extends Error {
+export class ApiException<T> extends NavienException {
   constructor(
     readonly response: T,
     message: string,
   ) {
     super(message);
-
-    this.name = 'ApiException';
-
-    // Maintaining proper stack trace for where our error was thrown (only available on V8)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ApiException);
-    }
-
-    // ES5 compatible
-    Object.setPrototypeOf(this, ApiException.prototype);
   }
 
   static from<T>(response: NavienResponse<T>): ApiException<NavienResponse<T>> {
