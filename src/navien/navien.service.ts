@@ -3,7 +3,7 @@ import { Logger } from 'homebridge';
 
 import { AwsPubSub } from '../aws/pubsub';
 import { NavienHomebridgePlatform } from '../platform';
-import { ApiException } from './exceptions';
+import { NavienException } from './exceptions';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
 import { NavienAuth } from './navien.auth';
@@ -44,8 +44,8 @@ export class NavienService {
           const newSession = await this.sessionManager.refreshAwsSession();
           pubsub.setSession(newSession);
         } catch (error) {
-          if (error instanceof ApiException) {
-            this.log.error('[AWS PubSub] APIException:', error.message);
+          if (error instanceof NavienException) {
+            this.log.error(`[AWS PubSub] ${error}`);
             return;
           }
           this.log.error('[AWS PubSub] Failed to refresh AWS session:', error);
@@ -81,8 +81,8 @@ export class NavienService {
     this.log.debug('Setting power to', power, 'for device', device.name);
 
     const success = await device.setPower(power).then(() => true).catch((error) => {
-      if (error instanceof ApiException) {
-        this.log.error('APIException:', error.message);
+      if (error instanceof NavienException) {
+        this.log.error(error.toString());
         return false;
       }
       this.log.error('Unknown error while setting power for device', device.name, ':', error);
@@ -101,8 +101,8 @@ export class NavienService {
     this.log.debug('Setting temperature to', temperature, 'for device', device.name);
 
     const success = await device.setTemperature(temperature).then(() => true).catch((error) => {
-      if (error instanceof ApiException) {
-        this.log.error('APIException:', error.message);
+      if (error instanceof NavienException) {
+        this.log.error(error.toString());
         return false;
       }
       this.log.error('Unknown error while setting temperature for device', device.name, ':', error);

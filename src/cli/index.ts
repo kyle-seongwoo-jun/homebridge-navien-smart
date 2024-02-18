@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-import { AuthException } from '../navien/exceptions';
+import { NavienException } from '../navien/exceptions';
 import { NavienAuth } from '../navien/navien.auth';
 
 if (process.argv.length < 4) {
@@ -20,8 +20,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  if (error instanceof AuthException) {
-    console.error('Error:', error.message);
+  if (error instanceof NavienException) {
+    console.error(error.toString());
     return;
   }
   console.error('Unknown error occurred. Please report this to the developer:', error);
