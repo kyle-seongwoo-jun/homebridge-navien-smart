@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.2.0...v1.2.1) (2024-02-18)
+
+
+### Bug Fixes
+
+* add exception handling and error logging when refreshing aws session ([0843462](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/08434625af26f2d644db1b24b25565013504a7f2))
+* refresh api session when expired ([f023dc0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/f023dc0a562964e9951284a814f7182edbf76eb2))
+
 ## [1.2.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.1.0...v1.2.0) (2024-02-15)
 
 
