@@ -40,8 +40,16 @@ export class NavienService {
       // refresh aws session and reconnect if connection is disrupted
       if (connectionState === ConnectionState.ConnectionDisrupted) {
         this.log.info('[AWS PubSub] Refreshing AWS session and reconnecting...');
-        const newSession = await this.sessionManager.refreshAwsSession();
-        pubsub.setSession(newSession);
+        try {
+          const newSession = await this.sessionManager.refreshAwsSession();
+          pubsub.setSession(newSession);
+        } catch (error) {
+          if (error instanceof ApiException) {
+            this.log.error('[AWS PubSub] APIException:', error.message);
+            return;
+          }
+          this.log.error('[AWS PubSub] Failed to refresh AWS session:', error);
+        }
       }
     });
   }
@@ -86,6 +94,7 @@ export class NavienService {
     } else {
       this.log.error('Failed to set power to', power, 'for device', device.name);
     }
+
   }
 
   public async setTemperature(device: NavienDevice, temperature: number) {
@@ -105,5 +114,6 @@ export class NavienService {
     } else {
       this.log.error('Failed to set temperature to', temperature, 'for device', device.name);
     }
+
   }
 }
