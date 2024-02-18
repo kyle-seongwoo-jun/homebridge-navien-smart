@@ -4,7 +4,7 @@ import { Logger } from 'homebridge';
 import { AwsSession } from '../aws/aws.session';
 import { NavienPlatformConfig } from '../platform';
 import { Persist } from '../utils/persist.util';
-import { ConfigurationException } from './exceptions';
+import { AuthException, ConfigurationException } from './exceptions';
 import { ResponseCode } from './interfaces';
 import { NavienAuth } from './navien.auth';
 import { NavienSession } from './navien.session';
@@ -59,20 +59,46 @@ export class NavienSessionManager {
     ]);
   }
 
+  public async refreshSession() {
+    const { session } = this;
+    if (!session) {
+      throw new Error('Please call ready() first.');
+    }
+
+    // refresh token
+    const response = await this.auth.refreshToken(session.refreshToken);
+    if (!response.data) {
+      throw new AuthException(`Refresh token may be expired. refreshToken: ${session.refreshToken}`);
+    }
+
+    // save new session
+    const newSession = this._session = NavienSession.fromAuthInfo(response.data.authInfo, session.refreshToken);
+    await this.storage.set('session', session);
+
+    return newSession;
+  }
+
   public async refreshAwsSession() {
     if (!this._session || !this._user) {
       throw new Error('Please call ready() first.');
     }
 
-    const { accessToken } = this._session;
+    // refresh api session if expired
+    let session = this._session;
+    if (!session.hasValidToken()) {
+      session = await this.refreshSession();
+    }
+
+    // login to get new aws session
+    const { accessToken } = session;
     const { userId, accountSeq } = this._user;
     const response = await this.auth.login2(accessToken, userId, accountSeq);
     assert(response.data, 'No data in login2 response.');
 
+    // save new aws session
     const { authInfo } = response.data;
-    const awsSession = AwsSession.fromResponse(authInfo);
+    const awsSession = this._awsSession = AwsSession.fromResponse(authInfo);
 
-    this._awsSession = awsSession;
     return awsSession;
   }
 

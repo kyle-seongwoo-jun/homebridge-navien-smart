@@ -71,15 +71,18 @@ export class NavienApi {
 
     if (!response.ok) {
       const json = await response.json() as CommonResponse;
-      if (response.status === 401) {
-        // login detected from another device
-        // TODO: re-login and retry
-        this.log.warn('Login detected from another device. We will re-login and retry.', json);
+      // login detected from another device
+      if (json.code === ResponseCode.COMMON_NOT_AUTHORIZED) {
+        this.log.error('Login detected from another device.');
+        // TODO: re-login and retry if authMode is 'account'
       }
-      if (response.status === 403) {
-        // token expired
-        // TODO: refresh token and retry
-        this.log.warn('Token expired. We will refresh token and retry.', json);
+      // token expired
+      if (json.code === ResponseCode.COMMON_TOKEN_EXPIRED) {
+        this.log.warn('Token expired. We will refresh token and retry.');
+
+        // refresh token and retry
+        await this.sessionManager.refreshSession();
+        return await this.request(method, path, options);
       }
       throw ApiException.from(json);
     }
