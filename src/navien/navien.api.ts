@@ -2,7 +2,6 @@ import assert from 'assert';
 import { Logger } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
-import { AwsSession } from '../aws/aws.session';
 import { API_URL } from './constants';
 import { ApiException } from './exceptions';
 import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
@@ -20,10 +19,6 @@ export class NavienApi {
 
   private get session(): NavienSession | undefined {
     return this.sessionManager.session;
-  }
-
-  private get awsSession(): AwsSession | undefined {
-    return this.sessionManager.awsSession;
   }
 
   private get user(): NavienUser | undefined {
