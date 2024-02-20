@@ -17,6 +17,7 @@ export type NavienPlatformConfig = PlatformConfig & {
   refreshToken?: string;
   accountSeq?: number;
   showCurrentTemperatureAsTarget: boolean;
+  accessoryType: 'HeaterCooler' | 'Thermostat';
 };
 
 /**

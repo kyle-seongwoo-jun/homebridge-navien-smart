@@ -63,6 +63,12 @@ export class NavienDevice {
     this.powerSubject.next(value);
   }
 
+  get isIdle() {
+    const { heatControl } = this.json.Properties.registry.attributes.functions;
+    const idleTemperature = heatControl.rangeMin - parseFloat(heatControl.unit);
+    return this._power && this._temperature === idleTemperature;
+  }
+
   get temperature() {
     return this._temperature;
   }
