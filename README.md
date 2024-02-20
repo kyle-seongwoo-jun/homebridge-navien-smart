@@ -60,11 +60,13 @@ npm i -g homebridge-navien-smart
 | `password` | Required if `authMode` = `account`. Navien Smart password |
 | `refreshToken` | Required if `authMode` = `token`. You can get it with `navien` cli. |
 | `accountSeq` | Required if `authMode` = `token`. You can get it with `navien` cli. |
+| `showCurrentTemperatureAsTarget` | Optional. If `true`, current temperature will be shown as target temperature. Default is `true` |
+| `accessoryType` | Required. You can choose between `HeaterCooler` and `Thermostat` |
 | `platform` | value always `NavienSmart` |
 
 If you don't want to put your password in the config, you can use `authMode` = `token` and use `refreshToken` and `accountSeq` instead.
 
-You can get them with `navien` cli. See [CLI Usage](#cli-usage).
+You can get `refreshToken` and `accountSeq` with `navien` cli. See [CLI Usage](#cli-usage).
 
 ## Implementation Status
 
