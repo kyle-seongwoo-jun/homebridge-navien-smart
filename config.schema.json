@@ -12,17 +12,14 @@
         "oneOf": [
           {
             "title": "Navien Smart Account",
-            "enum": [
-              "account"
-            ]
+            "enum": [ "account" ]
           },
           {
             "title": "Token",
-            "enum": [
-              "token"
-            ]
+            "enum": [ "token" ]
           }
-        ]
+        ],
+        "required": true
       },
       "username": {
         "title": "Username",
@@ -54,6 +51,22 @@
         "type": "boolean",
         "default": true,
         "description": "When set to `true`, displays the accessory's target temperature on the Apple Home screen, but may inaccurately reflect the home's climate as the target temperature. When `false`, shows \"--°\" with a \"No response\" warning on the Apple Home screen, but does not set the home's climate to the target temperature."
+      },
+      "accessoryType": {
+        "title": "Accessory Type",
+        "type": "string",
+        "default": "HeaterCooler",
+        "oneOf": [
+          {
+            "title": "Heater",
+            "enum": [ "HeaterCooler" ]
+          },
+          {
+            "title": "Thermostat",
+            "enum": [ "Thermostat" ]
+          }
+        ],
+        "required": true
       }
     }
   }
