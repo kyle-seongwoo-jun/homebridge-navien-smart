@@ -91,7 +91,7 @@ export default class ElectricMat {
 
     // current temperature
     heater.getCharacteristic(CurrentTemperature)
-      .onGet(this.getCurrentTemperature.bind(this));
+      .onGet(this.getTemperature.bind(this));
 
     // target temperature
     const { heatControl } = device.functions;
@@ -109,6 +109,7 @@ export default class ElectricMat {
       heater.updateCharacteristic(Active, power ? Active.ACTIVE : Active.INACTIVE);
     });
     device.temperatureChanges.subscribe((temperature) => {
+      heater.updateCharacteristic(CurrentTemperature, temperature);
       heater.updateCharacteristic(HeatingThresholdTemperature, temperature);
     });
 
@@ -175,7 +176,7 @@ export default class ElectricMat {
 
     // current temperature
     thermostat.getCharacteristic(CurrentTemperature)
-      .onGet(this.getCurrentTemperature.bind(this));
+      .onGet(this.getTemperature.bind(this));
 
     // subscribe to device events
     device.powerChanges.subscribe((power) => {
@@ -184,6 +185,7 @@ export default class ElectricMat {
     });
     device.temperatureChanges.subscribe((temperature) => {
       thermostat.updateCharacteristic(TargetTemperature, temperature);
+      thermostat.updateCharacteristic(CurrentTemperature, temperature);
     });
 
     return thermostat;
@@ -260,20 +262,5 @@ export default class ElectricMat {
     this.log.debug('Set Temperature:', temperature);
 
     await this.service.setTemperature(this.device, temperature);
-  }
-
-  private async getCurrentTemperature(): Promise<CharacteristicValue> {
-    // this device does not support to get current temperature
-
-    // if the user wants to show the current temperature as the target temperature,
-    // we can return the current temperature as the target temperature
-    if (this.platform.config.showCurrentTemperatureAsTarget) {
-      return this.getTemperature();
-    }
-
-    // if the user does not want to show the current temperature as the target temperature,
-    // we should throw an error to indicate that the current temperature is not supported
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    throw new HapStatusError(HAPStatus.NOT_ALLOWED_IN_CURRENT_STATE);
   }
 }
