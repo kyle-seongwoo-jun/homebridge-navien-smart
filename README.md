@@ -39,6 +39,7 @@ npm i -g homebridge-navien-smart
     "authMode": "account",
     "username": "<navien-smart-username>",
     "password": "<navien-smart-password>",
+    "accessoryType": "HeaterCooler",
     "platform": "NavienSmart"
 }
 ```
@@ -49,6 +50,7 @@ npm i -g homebridge-navien-smart
     "username": "<navien-smart-username>",
     "refreshToken": "<navien-api-refresh-token>",
     "accountSeq": 12345678,
+    "accessoryType": "HeaterCooler",
     "platform": "NavienSmart"
 }
 ```
