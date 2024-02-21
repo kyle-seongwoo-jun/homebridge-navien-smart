@@ -48,7 +48,19 @@ export class NavienDevice {
   }
 
   get functions() {
-    return this.json.Properties.registry.attributes.functions;
+    const { functions } = this.json.Properties.registry.attributes;
+    const { heatControl } = functions;
+
+    const step = parseFloat(heatControl.unit);
+    const heat = {
+      min: heatControl.rangeMin - step,
+      max: heatControl.rangeMax,
+      step: step,
+    };
+
+    return {
+      heat,
+    };
   }
 
   get power() {
@@ -64,9 +76,8 @@ export class NavienDevice {
   }
 
   get isIdle() {
-    const { heatControl } = this.json.Properties.registry.attributes.functions;
-    const idleTemperature = heatControl.rangeMin - parseFloat(heatControl.unit);
-    return this._power && this._temperature === idleTemperature;
+    const { heat } = this.functions;
+    return this._power && this._temperature === heat.min;
   }
 
   get temperature() {

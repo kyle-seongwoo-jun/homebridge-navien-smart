@@ -94,12 +94,12 @@ export default class ElectricMat {
       .onGet(this.getTemperature.bind(this));
 
     // target temperature
-    const { heatControl } = device.functions;
+    const { heat } = device.functions;
     heater.getCharacteristic(HeatingThresholdTemperature)
       .setProps({
-        minValue: heatControl.rangeMin,
-        maxValue: heatControl.rangeMax,
-        minStep: parseFloat(heatControl.unit),
+        minValue: heat.min,
+        maxValue: heat.max,
+        minStep: heat.step,
       })
       .onGet(this.getTemperature.bind(this))
       .onSet(this.setTemperature.bind(this));
@@ -164,12 +164,12 @@ export default class ElectricMat {
       .onSet(this.setHeatingState.bind(this));
 
     // target temperature
-    const { heatControl } = device.functions;
+    const { heat } = device.functions;
     thermostat.getCharacteristic(TargetTemperature)
       .setProps({
-        minValue: heatControl.rangeMin,
-        maxValue: heatControl.rangeMax,
-        minStep: parseFloat(heatControl.unit),
+        minValue: heat.min,
+        maxValue: heat.max,
+        minStep: heat.step,
       })
       .onGet(this.getTemperature.bind(this))
       .onSet(this.setTemperature.bind(this));
