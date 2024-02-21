@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.3.0...v1.4.0) (2024-02-21)
+
+
+### Features
+
+* control idle state to set min temperature ([d752249](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/d752249e1e56f457d57dce978875ab403dbb3946))
+
+
+### Bug Fixes
+
+* remove showCurrentTemperatureAsTarget option ([991f201](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/991f2011c514f777edc28baccc6ee4b5019be76c))
+* update mininum temperature value for idle state ([1ba4576](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/1ba457603192348f84c4226eb6abd08ad6ad1c35))
+
 ## [1.3.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.2.1...v1.3.0) (2024-02-20)
 
 
