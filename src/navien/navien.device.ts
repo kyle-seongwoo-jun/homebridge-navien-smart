@@ -57,14 +57,14 @@ export class NavienDevice {
     const { heatControl } = functions;
 
     const step = parseFloat(heatControl.unit);
-    const heat = {
+    const heatRange = {
       min: heatControl.rangeMin - step,
       max: heatControl.rangeMax,
       step: step,
     };
 
     return {
-      heat,
+      heatRange,
     };
   }
 
@@ -81,8 +81,8 @@ export class NavienDevice {
   }
 
   get isIdle() {
-    const { heat } = this.functions;
-    return this._power && this._temperature === heat.min;
+    const { heatRange } = this.functions;
+    return this._power && this._temperature === heatRange.min;
   }
 
   get temperature() {
@@ -114,7 +114,7 @@ export class NavienDevice {
   }
 
   setTemperature(temperature: number) {
-    return this.api.setTemperature(this.json, temperature);
+    return this.api.setTemperature(this.json, temperature, this.functions.heatRange);
   }
 
   dispose() {

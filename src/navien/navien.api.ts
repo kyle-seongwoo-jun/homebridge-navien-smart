@@ -158,38 +158,26 @@ export class NavienApi {
     });
   }
 
-  public setTemperature(device: Device, temperature: number) {
-    const {
-      Properties: {
-        registry: {
-          attributes: {
-            functions: {
-              heatControl,
-            },
-          },
-        },
-      },
-    } = device;
-
+  public setTemperature(device: Device, temperature: number, range: { min: number; max: number; step: number }) {
     // validate temperature
-    const { rangeMin, rangeMax, unit } = heatControl;
-    if (temperature < rangeMin || temperature > rangeMax) {
-      throw new Error(`Temperature must be between ${rangeMin} and ${rangeMax}. current: ${temperature}`);
+    const { min, max, step } = range;
+    if (temperature < min || temperature > max) {
+      throw new Error(`Temperature must be between ${min} and ${max}. current: ${temperature}`);
     }
-    if (temperature % parseFloat(unit) !== 0) {
-      throw new Error(`Temperature must be multiple of ${unit}. current: ${temperature}`);
+    if (temperature % step !== 0) {
+      throw new Error(`Temperature must be multiple of ${step}. current: ${temperature}`);
     }
 
     return this.controlDevice(device, {
       heater: {
         left: {
-          enable: true,
+          enable: temperature > min,
           temperature: {
             set: temperature,
           },
         },
         right: {
-          enable: true,
+          enable: temperature > min,
           temperature: {
             set: temperature,
           },
