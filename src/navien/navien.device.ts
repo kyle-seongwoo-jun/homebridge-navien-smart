@@ -25,10 +25,14 @@ export class NavienDevice {
   ) {
     // initialize event subscription
     this.subcription = this.pubsub.deviceStatusChanges(this.id).subscribe((event) => {
+      this.log.debug('[AWS PubSub] device status changed:', JSON.stringify(event));
+
       const state = event.state.reported!;
       const power = state.operationMode === OperationMode.ON;
-      const temperature = state.heater.left.temperature.set; // TODO: handle left and right
-      this.log.debug('Device status changed', { power, temperature });
+      const leftTemperature = state.heater.left.temperature.set;
+      const rightTemperature = state.heater.right.temperature.set;
+      const temperature = leftTemperature; // TODO: handle left and right
+      this.log.info('[AWS PubSub] current status:', { name: this.name, power, leftTemperature, rightTemperature });
 
       this.power = power;
       this.temperature = temperature;

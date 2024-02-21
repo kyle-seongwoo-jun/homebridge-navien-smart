@@ -39,7 +39,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug('Finished initializing platform:', config.platform);
+    this.log.info('Finished initializing platform:', config.platform);
 
     this.config = config as NavienPlatformConfig;
     this.navienService = new NavienService(this, log);
@@ -65,7 +65,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
    * to start discovery of new accessories.
    */
   onLaunched = async () => {
-    this.log.debug('Executed didFinishLaunching callback');
+    this.log.info('Executed didFinishLaunching callback');
 
     // wait for the navien service to be ready
     try {

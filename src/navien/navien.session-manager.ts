@@ -112,11 +112,11 @@ export class NavienSessionManager {
 
     if (saved) {
       ({ session, user: { userId, accountSeq } } = saved);
-      this.log.debug('Loaded session from storage');
+      this.log.info('Loaded session from storage');
     } else {
       // load session with config
       ({ session, userId, accountSeq } = await this._loadSessionWithConfig());
-      this.log.debug('Loaded session with config');
+      this.log.info('Loaded session with config');
     }
 
     return { session, userId, accountSeq };
@@ -128,7 +128,7 @@ export class NavienSessionManager {
 
     // no saved session
     if (!session || !user) {
-      this.log.debug('No saved session found.'); // may be first run
+      this.log.info('No saved session found.'); // may be first run
       return undefined;
     }
 

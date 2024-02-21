@@ -196,7 +196,7 @@ export default class ElectricMat {
     const { Characteristic } = this.platform;
     const { power } = this.device;
 
-    this.log.debug('Get Active:', power ? 'ON' : 'OFF');
+    this.log.info('Get Active:', power ? 'ON' : 'OFF');
 
     const state = power ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
     return state;
@@ -206,7 +206,7 @@ export default class ElectricMat {
     const state = value as number;
     const power = !!state;
 
-    this.log.debug('Set Active:', power ? 'ON' : 'OFF');
+    this.log.info('Set Active:', power ? 'ON' : 'OFF');
 
     await this.service.setPower(this.device, power);
   }
@@ -224,7 +224,7 @@ export default class ElectricMat {
         [Characteristic.CurrentHeaterCoolerState.HEATING, 'HEATING'];
     })();
 
-    this.log.debug('Get Heater State:', state[1]);
+    this.log.info('Get Heater State:', state[1]);
 
     return state[0];
   }
@@ -233,7 +233,7 @@ export default class ElectricMat {
     const { Characteristic } = this.platform;
     const { power } = this.device;
 
-    this.log.debug('Get Heating State:', power ? 'ON' : 'OFF');
+    this.log.info('Get Heating State:', power ? 'ON' : 'OFF');
 
     const state = power ? Characteristic.CurrentHeatingCoolingState.HEAT : Characteristic.CurrentHeatingCoolingState.OFF;
     return state;
@@ -243,7 +243,7 @@ export default class ElectricMat {
     const state = value as number;
     const power = !!state;
 
-    this.log.debug('Set Heating State:', power ? 'ON' : 'OFF');
+    this.log.info('Set Heating State:', power ? 'ON' : 'OFF');
 
     await this.service.setPower(this.device, power);
   }
@@ -251,7 +251,7 @@ export default class ElectricMat {
   private async getTemperature(): Promise<CharacteristicValue> {
     const { temperature } = this.device;
 
-    this.log.debug('Get Temperature:', temperature);
+    this.log.info('Get Temperature:', temperature);
 
     return temperature;
   }
@@ -259,7 +259,7 @@ export default class ElectricMat {
   private async setTemperature(value: CharacteristicValue) {
     const temperature = value as number;
 
-    this.log.debug('Set Temperature:', temperature);
+    this.log.info('Set Temperature:', temperature);
 
     await this.service.setTemperature(this.device, temperature);
   }

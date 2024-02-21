@@ -26,7 +26,7 @@ export class NavienService {
   }
 
   public async ready() {
-    this.log.debug('Ready to use Navien API');
+    this.log.info('Ready to use Navien API');
 
     // load session from storage or create new session
     await this.sessionManager.ready();
@@ -35,7 +35,7 @@ export class NavienService {
     const { user, awsSession } = this.sessionManager;
     const pubsub = this.pubsub = new AwsPubSub(user!.familySeq, awsSession!);
     pubsub.connectionStateChanges().subscribe(async (connectionState) => {
-      this.log.debug('[AWS PubSub] Connection state changed:', connectionState);
+      this.log.info('[AWS PubSub] Connection state changed:', connectionState);
 
       // refresh aws session and reconnect if connection is disrupted
       if (connectionState === ConnectionState.ConnectionDisrupted) {
@@ -55,7 +55,7 @@ export class NavienService {
   }
 
   public async getDevices() {
-    this.log.debug('Getting devices from Navien API');
+    this.log.info('Getting devices from Navien API');
 
     // get devices from Navien API
     const jsonArray = await this.api.getDevices().catch((error) => {
@@ -65,7 +65,7 @@ export class NavienService {
 
     // create devices from json
     const devices = jsonArray.map((json) => new NavienDevice(this.log, this.api, this.pubsub!, json));
-    this.log.debug('Devices:', devices.map((device) => device.name));
+    this.log.info('Devices:', devices.map((device) => device.name));
 
     // load current state from AWS
     devices.forEach((device) => {
@@ -78,7 +78,7 @@ export class NavienService {
   }
 
   public async setPower(device: NavienDevice, power: boolean) {
-    this.log.debug('Setting power to', power, 'for device', device.name);
+    this.log.info('Setting power to', power, 'for device', device.name);
 
     const success = await device.setPower(power).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
@@ -90,7 +90,7 @@ export class NavienService {
     });
 
     if (success) {
-      this.log.debug('Power set to', power, 'for device', device.name);
+      this.log.info('Power set to', power, 'for device', device.name);
     } else {
       this.log.error('Failed to set power to', power, 'for device', device.name);
     }
@@ -98,7 +98,7 @@ export class NavienService {
   }
 
   public async setTemperature(device: NavienDevice, temperature: number) {
-    this.log.debug('Setting temperature to', temperature, 'for device', device.name);
+    this.log.info('Setting temperature to', temperature, 'for device', device.name);
 
     const success = await device.setTemperature(temperature).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
@@ -110,7 +110,7 @@ export class NavienService {
     });
 
     if (success) {
-      this.log.debug('Temperature set to', temperature, 'for device', device.name);
+      this.log.info('Temperature set to', temperature, 'for device', device.name);
     } else {
       this.log.error('Failed to set temperature to', temperature, 'for device', device.name);
     }
