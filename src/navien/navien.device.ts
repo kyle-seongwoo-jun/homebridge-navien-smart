@@ -32,7 +32,8 @@ export class NavienDevice {
       const leftTemperature = state.heater.left.temperature.set;
       const rightTemperature = state.heater.right.temperature.set;
       const temperature = leftTemperature; // TODO: handle left and right
-      this.log.info('[AWS PubSub] current status:', { name: this.name, power, leftTemperature, rightTemperature });
+      const locked = state.childLock;
+      this.log.info('[AWS PubSub] current status:', { name: this.name, power, leftTemperature, rightTemperature, locked });
 
       this.power = power;
       this.temperature = temperature;
