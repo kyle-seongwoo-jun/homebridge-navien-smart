@@ -8,13 +8,16 @@ import { NavienApi } from './navien.api';
 
 const DEFALUT_IS_ACTIVE = false;
 const DEFALUT_TEMPERATURE = 30;
+const DEFALUT_IS_LOCKED = false;
 
 export class NavienDevice {
   private _isActive = DEFALUT_IS_ACTIVE;
   private _temperature = DEFALUT_TEMPERATURE;
+  private _isLocked = DEFALUT_IS_LOCKED;
 
   private readonly isActiveSubject = new BehaviorSubject<boolean>(DEFALUT_IS_ACTIVE);
   private readonly temperatureSubject = new BehaviorSubject<number>(DEFALUT_TEMPERATURE);
+  private readonly isLockedSubject = new BehaviorSubject<boolean>(DEFALUT_IS_LOCKED);
   private readonly subcription: Subscription;
 
   constructor(
@@ -32,11 +35,12 @@ export class NavienDevice {
       const leftTemperature = state.heater.left.temperature.set;
       const rightTemperature = state.heater.right.temperature.set;
       const temperature = leftTemperature; // TODO: handle left and right
-      const locked = state.childLock;
-      this.log.info('[AWS PubSub] current status:', { name: this.name, isActive, leftTemperature, rightTemperature, locked });
+      const isLocked = state.childLock;
+      this.log.info('[AWS PubSub] current status:', { name: this.name, isActive, leftTemperature, rightTemperature, isLocked });
 
       this.isActive = isActive;
       this.temperature = temperature;
+      this.isLocked = isLocked;
     });
   }
 
@@ -97,6 +101,18 @@ export class NavienDevice {
     this.temperatureSubject.next(value);
   }
 
+  get isLocked() {
+    return this._isLocked;
+  }
+
+  set isLocked(value: boolean) {
+    if (this._isLocked === value) {
+      return;
+    }
+    this._isLocked = value;
+    this.isLockedSubject.next(value);
+  }
+
   get activeChanges() {
     return this.isActiveSubject.asObservable();
   }
@@ -105,16 +121,24 @@ export class NavienDevice {
     return this.temperatureSubject.asObservable();
   }
 
+  get lockedChanges() {
+    return this.isLockedSubject.asObservable();
+  }
+
   initialize() {
     return this.api.initializeDevice(this.json);
   }
 
-  setActive(isActive: boolean) {
-    return this.api.setActive(this.json, isActive);
+  activate(isActive: boolean) {
+    return this.api.setOperationMode(this.json, isActive ? OperationMode.ON : OperationMode.OFF);
   }
 
   setTemperature(temperature: number) {
     return this.api.setTemperature(this.json, temperature, this.functions.heatRange);
+  }
+
+  lock(isLocked: boolean) {
+    return this.api.setChildLock(this.json, isLocked);
   }
 
   dispose() {

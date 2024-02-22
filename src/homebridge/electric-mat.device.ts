@@ -55,6 +55,7 @@ export default class ElectricMat {
         TargetHeaterCoolerState,
         CurrentTemperature,
         HeatingThresholdTemperature,
+        LockPhysicalControls,
         TemperatureDisplayUnits,
       },
       Service: {
@@ -104,6 +105,11 @@ export default class ElectricMat {
       .onGet(this.getTemperature.bind(this))
       .onSet(this.setTemperature.bind(this));
 
+    // lock
+    heater.getCharacteristic(LockPhysicalControls)
+      .onGet(this.getLocked.bind(this))
+      .onSet(this.setLocked.bind(this));
+
     // subscribe to device events
     device.activeChanges.subscribe((isActive) => {
       heater.updateCharacteristic(Active, isActive ? Active.ACTIVE : Active.INACTIVE);
@@ -111,6 +117,9 @@ export default class ElectricMat {
     device.temperatureChanges.subscribe((temperature) => {
       heater.updateCharacteristic(CurrentTemperature, temperature);
       heater.updateCharacteristic(HeatingThresholdTemperature, temperature);
+    });
+    device.lockedChanges.subscribe((isLocked) => {
+      heater.updateCharacteristic(LockPhysicalControls, isLocked);
     });
 
     return heater;
@@ -214,7 +223,7 @@ export default class ElectricMat {
 
     this.log.info('Set Active:', isActive ? 'ACTIVE' : 'INACTIVE');
 
-    await this.service.setActive(this.device, isActive);
+    await this.service.activate(this.device, isActive);
   }
 
   private async getHeaterState(): Promise<CharacteristicValue> {
@@ -251,7 +260,7 @@ export default class ElectricMat {
 
     this.log.info('Set Heating State:', isActive ? 'HEAT' : 'OFF');
 
-    await this.service.setActive(this.device, isActive);
+    await this.service.activate(this.device, isActive);
   }
 
   private async getTemperature(): Promise<CharacteristicValue> {
@@ -268,5 +277,21 @@ export default class ElectricMat {
     this.log.info('Set Temperature:', temperature);
 
     await this.service.setTemperature(this.device, temperature);
+  }
+
+  private async getLocked(): Promise<CharacteristicValue> {
+    const { isLocked } = this.device;
+
+    this.log.info('Get Locked:', isLocked);
+
+    return isLocked;
+  }
+
+  private async setLocked(value: CharacteristicValue) {
+    const isLocked = !!value;
+
+    this.log.info('Set Locked:', isLocked);
+
+    await this.service.lock(this.device, isLocked);
   }
 }

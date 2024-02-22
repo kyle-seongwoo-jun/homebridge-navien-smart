@@ -2,6 +2,7 @@ import assert from 'assert';
 import { Logger } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
+import { OperationMode } from '../aws/interfaces';
 import { API_URL } from './constants';
 import { ApiException } from './exceptions';
 import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
@@ -152,9 +153,9 @@ export class NavienApi {
     return this.controlDevice(device);
   }
 
-  public setActive(device: Device, isActive: boolean) {
+  public setOperationMode(device: Device, value: OperationMode) {
     return this.controlDevice(device, {
-      operationMode: isActive ? 1 : 0,
+      operationMode: value,
     });
   }
 
@@ -183,6 +184,12 @@ export class NavienApi {
           },
         },
       },
+    });
+  }
+
+  public setChildLock(device: Device, isLocked: boolean) {
+    return this.controlDevice(device, {
+      childLock: isLocked,
     });
   }
 }

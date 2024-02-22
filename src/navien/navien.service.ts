@@ -77,10 +77,10 @@ export class NavienService {
     return devices;
   }
 
-  public async setActive(device: NavienDevice, isActive: boolean) {
+  public async activate(device: NavienDevice, isActive: boolean) {
     this.log.info('Setting active to', isActive, 'for device', device.name);
 
-    const success = await device.setActive(isActive).then(() => true).catch((error) => {
+    const success = await device.activate(isActive).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
         this.log.error(error.toString());
         return false;
@@ -113,6 +113,24 @@ export class NavienService {
     } else {
       this.log.error('Failed to set temperature to', temperature, 'for device', device.name);
     }
+  }
 
+  public async lock(device: NavienDevice, isLocked: boolean) {
+    this.log.info('Setting lock to', isLocked, 'for device', device.name);
+
+    const success = await device.lock(isLocked).then(() => true).catch((error) => {
+      if (error instanceof NavienException) {
+        this.log.error(error.toString());
+        return false;
+      }
+      this.log.error('Unknown error while setting lock for device', device.name, ':', error);
+      return false;
+    });
+
+    if (success) {
+      this.log.info('Lock set to', isLocked, 'for device', device.name);
+    } else {
+      this.log.error('Failed to set lock to', isLocked, 'for device', device.name);
+    }
   }
 }
