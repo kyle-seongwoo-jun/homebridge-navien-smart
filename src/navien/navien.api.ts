@@ -152,9 +152,9 @@ export class NavienApi {
     return this.controlDevice(device);
   }
 
-  public setPower(device: Device, power: boolean) {
+  public setActive(device: Device, isActive: boolean) {
     return this.controlDevice(device, {
-      operationMode: power ? 1 : 0,
+      operationMode: isActive ? 1 : 0,
     });
   }
 

@@ -105,8 +105,8 @@ export default class ElectricMat {
       .onSet(this.setTemperature.bind(this));
 
     // subscribe to device events
-    device.powerChanges.subscribe((power) => {
-      heater.updateCharacteristic(Active, power ? Active.ACTIVE : Active.INACTIVE);
+    device.activeChanges.subscribe((isActive) => {
+      heater.updateCharacteristic(Active, isActive ? Active.ACTIVE : Active.INACTIVE);
     });
     device.temperatureChanges.subscribe((temperature) => {
       heater.updateCharacteristic(CurrentTemperature, temperature);
@@ -179,9 +179,15 @@ export default class ElectricMat {
       .onGet(this.getTemperature.bind(this));
 
     // subscribe to device events
-    device.powerChanges.subscribe((power) => {
-      thermostat.updateCharacteristic(CurrentHeatingCoolingState, power ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF);
-      thermostat.updateCharacteristic(TargetHeatingCoolingState, power ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF);
+    device.activeChanges.subscribe((isActive) => {
+      thermostat.updateCharacteristic(
+        CurrentHeatingCoolingState,
+        isActive ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
+      );
+      thermostat.updateCharacteristic(
+        TargetHeatingCoolingState,
+        isActive ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
+      );
     });
     device.temperatureChanges.subscribe((temperature) => {
       thermostat.updateCharacteristic(TargetTemperature, temperature);
@@ -194,29 +200,29 @@ export default class ElectricMat {
 
   private async getActive(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
-    const { power } = this.device;
+    const { isActive } = this.device;
 
-    this.log.info('Get Active:', power ? 'ON' : 'OFF');
+    this.log.info('Get Active:', isActive ? 'ACTIVE' : 'INACTIVE');
 
-    const state = power ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
+    const state = isActive ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
     return state;
   }
 
   private async setActive(value: CharacteristicValue) {
     const state = value as number;
-    const power = !!state;
+    const isActive = !!state;
 
-    this.log.info('Set Active:', power ? 'ON' : 'OFF');
+    this.log.info('Set Active:', isActive ? 'ACTIVE' : 'INACTIVE');
 
-    await this.service.setPower(this.device, power);
+    await this.service.setActive(this.device, isActive);
   }
 
   private async getHeaterState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
-    const { power, isIdle } = this.device;
+    const { isActive, isIdle } = this.device;
 
     const state = (() => {
-      if (!power) {
+      if (!isActive) {
         return [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
       }
       return isIdle ?
@@ -231,21 +237,21 @@ export default class ElectricMat {
 
   private async getHeatingState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
-    const { power } = this.device;
+    const { isActive } = this.device;
 
-    this.log.info('Get Heating State:', power ? 'ON' : 'OFF');
+    this.log.info('Get Heating State:', isActive ? 'HEAT' : 'OFF');
 
-    const state = power ? Characteristic.CurrentHeatingCoolingState.HEAT : Characteristic.CurrentHeatingCoolingState.OFF;
+    const state = isActive ? Characteristic.CurrentHeatingCoolingState.HEAT : Characteristic.CurrentHeatingCoolingState.OFF;
     return state;
   }
 
   private async setHeatingState(value: CharacteristicValue) {
     const state = value as number;
-    const power = !!state;
+    const isActive = !!state;
 
-    this.log.info('Set Heating State:', power ? 'ON' : 'OFF');
+    this.log.info('Set Heating State:', isActive ? 'HEAT' : 'OFF');
 
-    await this.service.setPower(this.device, power);
+    await this.service.setActive(this.device, isActive);
   }
 
   private async getTemperature(): Promise<CharacteristicValue> {

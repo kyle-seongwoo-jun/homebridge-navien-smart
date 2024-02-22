@@ -6,14 +6,14 @@ import { AwsPubSub } from '../aws/pubsub';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
 
-const DEFALUT_POWER = false;
+const DEFALUT_IS_ACTIVE = false;
 const DEFALUT_TEMPERATURE = 30;
 
 export class NavienDevice {
-  private _power = DEFALUT_POWER;
+  private _isActive = DEFALUT_IS_ACTIVE;
   private _temperature = DEFALUT_TEMPERATURE;
 
-  private readonly powerSubject = new BehaviorSubject<boolean>(DEFALUT_POWER);
+  private readonly isActiveSubject = new BehaviorSubject<boolean>(DEFALUT_IS_ACTIVE);
   private readonly temperatureSubject = new BehaviorSubject<number>(DEFALUT_TEMPERATURE);
   private readonly subcription: Subscription;
 
@@ -28,14 +28,14 @@ export class NavienDevice {
       this.log.debug('[AWS PubSub] device status changed:', JSON.stringify(event));
 
       const state = event.state.reported!;
-      const power = state.operationMode === OperationMode.ON;
+      const isActive = state.operationMode === OperationMode.ON;
       const leftTemperature = state.heater.left.temperature.set;
       const rightTemperature = state.heater.right.temperature.set;
       const temperature = leftTemperature; // TODO: handle left and right
       const locked = state.childLock;
-      this.log.info('[AWS PubSub] current status:', { name: this.name, power, leftTemperature, rightTemperature, locked });
+      this.log.info('[AWS PubSub] current status:', { name: this.name, isActive, leftTemperature, rightTemperature, locked });
 
-      this.power = power;
+      this.isActive = isActive;
       this.temperature = temperature;
     });
   }
@@ -68,21 +68,21 @@ export class NavienDevice {
     };
   }
 
-  get power() {
-    return this._power;
+  get isActive() {
+    return this._isActive;
   }
 
-  set power(value: boolean) {
-    if (this._power === value) {
+  set isActive(value: boolean) {
+    if (this._isActive === value) {
       return;
     }
-    this._power = value;
-    this.powerSubject.next(value);
+    this._isActive = value;
+    this.isActiveSubject.next(value);
   }
 
   get isIdle() {
     const { heatRange } = this.functions;
-    return this._power && this._temperature === heatRange.min;
+    return this._isActive && this._temperature === heatRange.min;
   }
 
   get temperature() {
@@ -97,8 +97,8 @@ export class NavienDevice {
     this.temperatureSubject.next(value);
   }
 
-  get powerChanges() {
-    return this.powerSubject.asObservable();
+  get activeChanges() {
+    return this.isActiveSubject.asObservable();
   }
 
   get temperatureChanges() {
@@ -109,8 +109,8 @@ export class NavienDevice {
     return this.api.initializeDevice(this.json);
   }
 
-  setPower(power: boolean) {
-    return this.api.setPower(this.json, power);
+  setActive(isActive: boolean) {
+    return this.api.setActive(this.json, isActive);
   }
 
   setTemperature(temperature: number) {

@@ -77,24 +77,23 @@ export class NavienService {
     return devices;
   }
 
-  public async setPower(device: NavienDevice, power: boolean) {
-    this.log.info('Setting power to', power, 'for device', device.name);
+  public async setActive(device: NavienDevice, isActive: boolean) {
+    this.log.info('Setting active to', isActive, 'for device', device.name);
 
-    const success = await device.setPower(power).then(() => true).catch((error) => {
+    const success = await device.setActive(isActive).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
         this.log.error(error.toString());
         return false;
       }
-      this.log.error('Unknown error while setting power for device', device.name, ':', error);
+      this.log.error('Unknown error while setting active for device', device.name, ':', error);
       return false;
     });
 
     if (success) {
-      this.log.info('Power set to', power, 'for device', device.name);
+      this.log.info('Active set to', isActive, 'for device', device.name);
     } else {
-      this.log.error('Failed to set power to', power, 'for device', device.name);
+      this.log.error('Failed to set active to', isActive, 'for device', device.name);
     }
-
   }
 
   public async setTemperature(device: NavienDevice, temperature: number) {
