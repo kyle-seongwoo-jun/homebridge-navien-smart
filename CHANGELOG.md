@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.4.0...v1.5.0) (2024-02-22)
+
+
+### Features
+
+* add lock functionality to ElectricMat device and Navien API ([10fb265](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/10fb2656e65fb33b1cb9b50b9b21bf5d4d2e219f))
+
 ## [1.4.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.3.0...v1.4.0) (2024-02-21)
 
 
