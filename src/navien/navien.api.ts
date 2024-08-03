@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
 import { OperationMode } from '../aws/interfaces';
@@ -14,7 +14,7 @@ type RequestMethods = 'GET' | 'POST';
 
 export class NavienApi {
   constructor(
-    private readonly log: Logger,
+    private readonly log: Logging,
     private readonly sessionManager: NavienSessionManager,
   ) { }
 

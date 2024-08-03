@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 
 import { AwsSession } from '../aws/aws.session';
 import { NavienPlatformConfig } from '../platform';
@@ -16,7 +16,7 @@ export class NavienSessionManager {
   private _user?: NavienUser;
 
   constructor(
-      private readonly log: Logger,
+      private readonly log: Logging,
       private readonly auth: NavienAuth,
       private readonly storage: Persist,
       private readonly config: NavienPlatformConfig,

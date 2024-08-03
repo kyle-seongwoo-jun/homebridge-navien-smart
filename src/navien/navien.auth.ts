@@ -1,5 +1,5 @@
 import fetchCookie from 'fetch-cookie';
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
@@ -9,7 +9,7 @@ import { CommonResponse, Login2Response, LoginResponse, RefreshTokenResponse, Re
 
 export class NavienAuth {
   constructor(
-    private readonly log: Logger,
+    private readonly log: Logging,
   ) { }
 
   async login(username: string, password: string): Promise<LoginResponse> {

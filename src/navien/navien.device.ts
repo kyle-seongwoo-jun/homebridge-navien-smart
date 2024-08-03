@@ -1,4 +1,4 @@
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 import { BehaviorSubject, Subscription } from 'rxjs';
 
 import { OperationMode } from '../aws/interfaces';
@@ -21,7 +21,7 @@ export class NavienDevice {
   private readonly subcription: Subscription;
 
   constructor(
-    private readonly log: Logger,
+    private readonly log: Logging,
     private readonly api: NavienApi,
     private readonly pubsub: AwsPubSub,
     private readonly json: Device,

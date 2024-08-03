@@ -1,5 +1,5 @@
 import { ConnectionState } from '@aws-amplify/pubsub';
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 
 import { AwsPubSub } from '../aws/pubsub';
 import { NavienHomebridgePlatform } from '../platform';
@@ -18,7 +18,7 @@ export class NavienService {
 
   constructor(
     private readonly platform: NavienHomebridgePlatform,
-    private readonly log: Logger,
+    private readonly log: Logging,
   ) {
     this.auth = new NavienAuth(log);
     this.sessionManager = new NavienSessionManager(log, this.auth, platform.createPersist(), platform.config);

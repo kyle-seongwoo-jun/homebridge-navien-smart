@@ -1,4 +1,4 @@
-import { API, Characteristic, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
+import { API, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 import path from 'path';
 
 import ElectricMat from './homebridge/electric-mat.device';
@@ -35,7 +35,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly navienService: NavienService;
 
   constructor(
-    public readonly log: Logger,
+    public readonly log: Logging,
     config: PlatformConfig,
     public readonly api: API,
   ) {
