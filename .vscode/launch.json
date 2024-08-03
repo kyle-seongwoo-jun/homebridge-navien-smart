@@ -4,8 +4,7 @@
     {
       "type": "node",
       "name": "Debug Homebridge",
-      // your path to homebridge: $(which homebridge)
-      "program": "/Users/kyle/.nvm/versions/node/v20.9.0/bin/homebridge",
+      "program": "${workspaceFolder}/node_modules/.bin/homebridge",
       "preLaunchTask": "tsc: build - tsconfig.json",
       "internalConsoleOptions": "neverOpen",
       "args": ["-I", "-D"],
