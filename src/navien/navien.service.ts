@@ -1,6 +1,6 @@
 import { ConnectionState } from '@aws-amplify/pubsub';
 import assert from 'assert';
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 
 import { OperationMode } from '../aws/interfaces';
 import { AwsPubSub } from '../aws/pubsub';
@@ -16,7 +16,7 @@ export class NavienService {
   private deviceStatusRepositories?: Record<string, NavienDeviceStatusRepository>;
 
   constructor(
-    private readonly log: Logger,
+    private readonly log: Logging,
     private readonly sessionManager: NavienSessionManager,
     private readonly api: NavienApi,
   ) { }
