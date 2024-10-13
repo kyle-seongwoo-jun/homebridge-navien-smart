@@ -7,6 +7,8 @@ import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
 import { ApiException, AuthException } from './exceptions';
 import { CommonResponse, Login2Response, LoginResponse, RefreshTokenResponse, ResponseCode } from './interfaces';
 
+const fetchWithCookies = fetchCookie(fetch);
+
 export class NavienAuth {
   constructor(
     private readonly log: Logger,
@@ -17,7 +19,6 @@ export class NavienAuth {
 
     // request login
     // this will redirect to /member/loginOk and it requires cookie so we use fetch-cookie
-    const fetchWithCookies = fetchCookie(fetch);
     const response = await fetchWithCookies(`${LOGIN_API_URL}/member/login`, {
       method: 'POST',
       headers: {
@@ -42,7 +43,10 @@ export class NavienAuth {
 
     // login successed, but need to change password
     if (html.includes('passwordChg')) {
-      throw new AuthException('You need to reset your password to login. Please change it in the app.');
+      // request to change password later, and try to login again
+      this.log.warn('You need to reset your password to login. We will request to change password later and try to login again.');
+      await this._pwchglate();
+      return this.login(username, password);
     }
 
     // extract json from html
@@ -109,6 +113,21 @@ export class NavienAuth {
     });
 
     const json = await response.json() as CommonResponse;
+    return json;
+  }
+
+  async _pwchglate(): Promise<{ success: boolean }> {
+    const response = await fetchWithCookies(`${LOGIN_API_URL}/pwchgLate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const { ok, status, statusText } = response;
+    this.log.debug(`pwchglate: ${ok} ${status} ${statusText}`);
+
+    const json = await response.json() as { success: boolean };
     return json;
   }
 
