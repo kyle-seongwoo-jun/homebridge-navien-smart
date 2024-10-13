@@ -34,8 +34,16 @@ export class NavienAuth {
     });
     const html = await response.text();
 
-    // check if login is successful
-    this._validateLoginHtml(html);
+    const loginSuccess = this._isLoginSuccess(html);
+    if (!loginSuccess) {
+      // throw exception if login is failed
+      throw this._generateAuthException(html);
+    }
+
+    // login successed, but need to change password
+    if (html.includes('passwordChg')) {
+      throw new AuthException('You need to reset your password to login. Please change it in the app.');
+    }
 
     // extract json from html
     const jsonString = this._extractJsonFromHtml(html);
@@ -104,22 +112,25 @@ export class NavienAuth {
     return json;
   }
 
-  private _validateLoginHtml(html: string): void {
-    if (!html.includes('id="loginFailPopup" style="display:none;"')) {
-      return;
-    }
+  private _isLoginSuccess(html: string): boolean {
+    return !html.includes('id="loginFailPopup" style="display:none;"');
+  }
 
+  private _generateAuthException(html: string): AuthException {
+    // if username is incorrect
     if (!html.includes('입력한 정보가 일치하지 않습니다.')) {
-      throw new AuthException('Username is incorrect.');
+      return new AuthException('Username is incorrect.');
     }
 
+    // if password is incorrect
     const match = html.match(/현재 (\d)회/);
     if (match) {
       const count = parseInt(match[1]);
-      throw new AuthException(`Password is incorrect. If you fail 5 times, you need to reset your password to login. (current: ${count})`);
+      return new AuthException(`Password is incorrect. If you fail 5 times, you need to reset your password to login. (current: ${count})`);
     }
 
-    throw new AuthException('Password is incorrect. You need to reset your password to login.');
+    // if password is incorrect and need to reset password
+    return new AuthException('Password is incorrect. You need to reset your password to login.');
   }
 
   private _extractJsonFromHtml(html: string): string | undefined {
