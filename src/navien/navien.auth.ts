@@ -5,7 +5,7 @@ import { URLSearchParams } from 'url';
 
 import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
 import { ApiException, AuthException } from './exceptions';
-import { CommonResponse, Login2Response, LoginResponse, RefreshTokenResponse, ResponseCode } from './interfaces';
+import { Login2Response, LoginResponse, RefreshTokenResponse, ResponseCode } from './interfaces';
 
 const fetchWithCookies = fetchCookie(fetch);
 
@@ -99,20 +99,6 @@ export class NavienAuth {
     });
 
     const json = await response.json() as RefreshTokenResponse;
-    return json;
-  }
-
-  async verifyToken(accessToken: string, userSeq: number): Promise<CommonResponse> {
-    this.log.info(`Verifying token with accessToken: ${accessToken}`);
-
-    const response = await fetch(`${API_URL}/users/${userSeq}/session/verify`, {
-      method: 'POST',
-      headers: {
-        'Authorization': accessToken,
-      },
-    });
-
-    const json = await response.json() as CommonResponse;
     return json;
   }
 

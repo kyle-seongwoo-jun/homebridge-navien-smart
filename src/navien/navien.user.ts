@@ -3,7 +3,7 @@ export class NavienUser {
     readonly userId: string,
     readonly accountSeq: number,
     readonly userSeq: number,
-    readonly familySeq: number,
+    readonly homeSeq: number,
   ) {
   }
 
@@ -12,11 +12,16 @@ export class NavienUser {
       throw new Error('Invalid JSON for NavienUser');
     }
 
-    const { userId, accountSeq, userSeq, familySeq } = json as NavienUser;
-    if (!userId || !accountSeq || !userSeq || !familySeq) {
+    // if familySeq is in json, it means the json is outdated (for Navien API v1.0)
+    if ('familySeq' in json) {
+      throw new Error('JSON Schema is outdated.');
+    }
+
+    const { userId, accountSeq, userSeq, homeSeq } = json as NavienUser;
+    if (!userId || !accountSeq || !userSeq || !homeSeq) {
       throw new Error('Invalid JSON for NavienUser');
     }
 
-    return new NavienUser(userId, accountSeq, userSeq, familySeq);
+    return new NavienUser(userId, accountSeq, userSeq, homeSeq);
   }
 }

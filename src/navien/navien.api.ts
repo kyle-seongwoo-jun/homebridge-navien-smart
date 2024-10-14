@@ -96,11 +96,11 @@ export class NavienApi {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this.user;
+    const { homeSeq, userSeq } = this.user;
 
     const response = await this.request<DevicesResponse>('GET', '/devices', {
       query: {
-        familySeq: `${familySeq}`,
+        homeSeq: `${homeSeq}`,
         userSeq: `${userSeq}`,
       },
     });
@@ -115,12 +115,12 @@ export class NavienApi {
       throw new Error('should call ready() first.');
     }
 
-    const { familySeq, userSeq } = this.user;
+    const { homeSeq, userSeq } = this.user;
     const { serviceCode, deviceId, deviceSeq, modelCode } = device;
 
     const response = await this.request<CommonResponse>('POST', `/devices/${deviceSeq}/control`, {
       query: {
-        familySeq: `${familySeq}`,
+        homeSeq: `${homeSeq}`,
         userSeq: `${userSeq}`,
       },
       headers: {

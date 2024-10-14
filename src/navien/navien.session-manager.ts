@@ -5,7 +5,6 @@ import { AwsSession } from '../aws/aws.session';
 import { NavienPlatformConfig } from '../platform';
 import { Persist } from '../utils/persist.util';
 import { AuthException, ConfigurationException } from './exceptions';
-import { ResponseCode } from './interfaces';
 import { NavienAuth } from './navien.auth';
 import { NavienSession } from './navien.session';
 import { NavienUser } from './navien.user';
@@ -44,9 +43,16 @@ export class NavienSessionManager {
     const response = await this.auth.login2(session.accessToken, userId, accountSeq);
     assert(response.data, 'No data in login2 response.');
 
-    const { familySeq, userSeq, authInfo } = response.data;
+    const { userInfo, currentHomeSeq, home, authInfo } = response.data;
+    assert(userInfo.userId === userId, 'userId in login2 response does not match.');
+    assert(home.length > 0, 'No home in login2 response.');
+    this.log.debug('currentHomeSeq:', currentHomeSeq);
+    this.log.debug('homes.homeSeq:', home.map(h => h.homeSeq));
+
+    const { userSeq } = userInfo;
+    const { homeSeq } = home[0];
     const awsSession = AwsSession.fromResponse(authInfo);
-    const user = new NavienUser(userId, accountSeq, userSeq, familySeq);
+    const user = new NavienUser(userId, accountSeq, userSeq, homeSeq);
 
     // save session
     this._session = session;
@@ -123,8 +129,18 @@ export class NavienSessionManager {
   }
 
   private async _loadSessionFromStorage() {
-    let session = await this.storage.get('session', { deserialize: NavienSession.fromJSON });
-    const user = await this.storage.get('user', { deserialize: NavienUser.fromJSON });
+    // load session and user from storage
+    let session: NavienSession | undefined;
+    let user: NavienUser | undefined;
+    try {
+      session = await this.storage.get('session', { deserialize: NavienSession.fromJSON });
+      user = await this.storage.get('user', { deserialize: NavienUser.fromJSON });
+    } catch (error) {
+      // reach here if json schema is changed to new version
+      // return undefined to force re-login
+      this.log.warn('Failed to load session from storage:', error);
+      return undefined;
+    }
 
     // no saved session
     if (!session || !user) {
@@ -142,13 +158,8 @@ export class NavienSessionManager {
       return undefined;
     }
 
-    const isTokenInvalid = async (session: NavienSession, user: NavienUser) => {
-      const response = await this.auth.verifyToken(session.accessToken, user.userSeq);
-      return response.code !== ResponseCode.SUCCESS;
-    };
-
     // refresh token if expired
-    if (session.isTokenExpired() || await isTokenInvalid(session, user)) {
+    if (session.isTokenExpired()) {
       const response = await this.auth.refreshToken(session.refreshToken);
 
       // saved refresh token may be expired
