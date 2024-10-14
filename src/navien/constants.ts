@@ -1,4 +1,4 @@
-export const API_URL = 'https://nskr.naviensmartcontrol.com/api/v1.0';
+export const API_URL = 'https://nskr.naviensmartcontrol.com/api/v2.0';
 export const LOGIN_API_URL = 'https://member.naviensmartcontrol.com';
 
 // eslint-disable-next-line max-len

@@ -36,7 +36,7 @@ export interface Registry {
 
 export interface Attributes {
     country: string;
-    userInfo: UserInfo;
+    userInfo: DeviceInfo;
     wifi: Wifi;
     functions: Functions;
     lastModifyAt: Date;
@@ -127,12 +127,12 @@ export interface Server {
     endpoint: string;
 }
 
-export interface UserInfo {
+export interface DeviceInfo {
     userId: string;
-    nickName: UserInfoNickName;
+    nickName: DeviceNickName;
 }
 
-export interface UserInfoNickName {
+export interface DeviceNickName {
     left: string;
     main: string;
     right: string;

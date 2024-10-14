@@ -17,7 +17,7 @@ export class AwsPubSub {
   private readonly _pubsub: PubSub;
   private readonly _connectionStateSubject = new BehaviorSubject<ConnectionState>(ConnectionState.Disconnected);
 
-  constructor(familySeq: number, awsSession: AwsSession) {
+  constructor(homeSeq: number, awsSession: AwsSession) {
     // set aws session
     this.setSession(awsSession);
 
@@ -34,7 +34,7 @@ export class AwsPubSub {
     this._pubsub = new PubSub({
       region: AWS_IOT_REGION,
       endpoint: `wss://${AWS_IOT_ENDPOINT}/mqtt`,
-      clientId: `${uuidv4()}-${familySeq}`,
+      clientId: `${uuidv4()}-${homeSeq}`,
     });
   }
 

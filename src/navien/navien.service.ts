@@ -33,7 +33,7 @@ export class NavienService {
 
     // initialize aws pubsub
     const { user, awsSession } = this.sessionManager;
-    const pubsub = this.pubsub = new AwsPubSub(user!.familySeq, awsSession!);
+    const pubsub = this.pubsub = new AwsPubSub(user!.homeSeq, awsSession!);
     pubsub.connectionStateChanges().subscribe(async (connectionState) => {
       this.log.info('[AWS PubSub] Connection state changed:', connectionState);
 

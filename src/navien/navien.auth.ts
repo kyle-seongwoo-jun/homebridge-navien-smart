@@ -5,7 +5,9 @@ import { URLSearchParams } from 'url';
 
 import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
 import { ApiException, AuthException } from './exceptions';
-import { CommonResponse, Login2Response, LoginResponse, RefreshTokenResponse, ResponseCode } from './interfaces';
+import { Login2Response, LoginResponse, RefreshTokenResponse, ResponseCode } from './interfaces';
+
+const fetchWithCookies = fetchCookie(fetch);
 
 export class NavienAuth {
   constructor(
@@ -17,7 +19,6 @@ export class NavienAuth {
 
     // request login
     // this will redirect to /member/loginOk and it requires cookie so we use fetch-cookie
-    const fetchWithCookies = fetchCookie(fetch);
     const response = await fetchWithCookies(`${LOGIN_API_URL}/member/login`, {
       method: 'POST',
       headers: {
@@ -34,8 +35,19 @@ export class NavienAuth {
     });
     const html = await response.text();
 
-    // check if login is successful
-    this._validateLoginHtml(html);
+    const loginSuccess = this._isLoginSuccess(html);
+    if (!loginSuccess) {
+      // throw exception if login is failed
+      throw this._generateAuthException(html);
+    }
+
+    // login successed, but need to change password
+    if (html.includes('passwordChg')) {
+      // request to change password later, and try to login again
+      this.log.warn('You need to reset your password to login. We will request to change password later and try to login again.');
+      await this._pwchglate();
+      return this.login(username, password);
+    }
 
     // extract json from html
     const jsonString = this._extractJsonFromHtml(html);
@@ -90,36 +102,40 @@ export class NavienAuth {
     return json;
   }
 
-  async verifyToken(accessToken: string, userSeq: number): Promise<CommonResponse> {
-    this.log.info(`Verifying token with accessToken: ${accessToken}`);
-
-    const response = await fetch(`${API_URL}/users/${userSeq}/session/verify`, {
+  async _pwchglate(): Promise<{ success: boolean }> {
+    const response = await fetchWithCookies(`${LOGIN_API_URL}/pwchgLate`, {
       method: 'POST',
       headers: {
-        'Authorization': accessToken,
+        'Content-Type': 'application/json',
       },
     });
 
-    const json = await response.json() as CommonResponse;
+    const { ok, status, statusText } = response;
+    this.log.debug(`pwchglate: ${ok} ${status} ${statusText}`);
+
+    const json = await response.json() as { success: boolean };
     return json;
   }
 
-  private _validateLoginHtml(html: string): void {
-    if (!html.includes('id="loginFailPopup" style="display:none;"')) {
-      return;
-    }
+  private _isLoginSuccess(html: string): boolean {
+    return !html.includes('id="loginFailPopup" style="display:none;"');
+  }
 
+  private _generateAuthException(html: string): AuthException {
+    // if username is incorrect
     if (!html.includes('입력한 정보가 일치하지 않습니다.')) {
-      throw new AuthException('Username is incorrect.');
+      return new AuthException('Username is incorrect.');
     }
 
+    // if password is incorrect
     const match = html.match(/현재 (\d)회/);
     if (match) {
       const count = parseInt(match[1]);
-      throw new AuthException(`Password is incorrect. If you fail 5 times, you need to reset your password to login. (current: ${count})`);
+      return new AuthException(`Password is incorrect. If you fail 5 times, you need to reset your password to login. (current: ${count})`);
     }
 
-    throw new AuthException('Password is incorrect. You need to reset your password to login.');
+    // if password is incorrect and need to reset password
+    return new AuthException('Password is incorrect. You need to reset your password to login.');
   }
 
   private _extractJsonFromHtml(html: string): string | undefined {
