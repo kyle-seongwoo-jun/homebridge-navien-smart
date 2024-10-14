@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.5.0...v1.6.0) (2024-10-14)
+
+
+### Features
+
+* **api:** migrate from navien api v1.0 to v2.0 ([f77c898](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/f77c898a0f64734163d9a6725540a4945d4271e2))
+* **auth:** add change password later logic ([6f20a04](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/6f20a046c53d460592eabd167b86c330f5577a60))
+* **auth:** handle login success and password reset ([14c21f4](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/14c21f46cf0285a2a3250d88614def96e823e5b8))
+
 ## [1.5.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.4.0...v1.5.0) (2024-02-22)
 
 
