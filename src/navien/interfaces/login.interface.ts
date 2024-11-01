@@ -3,7 +3,7 @@ export interface TokenAuthInfo {
     authenticationExpiresIn: number; // seconds
 }
 
-export interface Login2Data {
+export interface TokenLoginData {
     userInfo: UserInfo;
     currentHomeSeq: number | null; // seems to be always null
     home: Home[];

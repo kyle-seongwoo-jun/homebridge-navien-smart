@@ -1,5 +1,5 @@
 import { Device } from './device.interface';
-import { Login2Data, TokenAuthInfo } from './login.interface';
+import { TokenAuthInfo, TokenLoginData } from './login.interface';
 
 export interface LoginResponse {
     loginId: string;
@@ -20,7 +20,7 @@ export type CommonResponse = NavienResponse<never>;
 
 export type RefreshTokenResponse = NavienResponse<{ authInfo: TokenAuthInfo }>;
 
-export type Login2Response = NavienResponse<Login2Data>;
+export type TokenLoginResponse = NavienResponse<TokenLoginData>;
 
 export type DevicesResponse = NavienResponse<{ devices: Device[] }>;
 

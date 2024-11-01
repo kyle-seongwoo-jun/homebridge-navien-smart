@@ -40,12 +40,12 @@ export class NavienSessionManager {
     const { session, userId, accountSeq } = await this._loadSession();
 
     // login with session
-    const response = await this.auth.login2(session.accessToken, userId, accountSeq);
-    assert(response.data, 'No data in login2 response.');
+    const response = await this.auth.tokenLogin(session.accessToken, userId, accountSeq);
+    assert(response.data, 'No data in token-login response.');
 
     const { userInfo, currentHomeSeq, home, authInfo } = response.data;
-    assert(userInfo.userId === userId, 'userId in login2 response does not match.');
-    assert(home.length > 0, 'No home in login2 response.');
+    assert(userInfo.userId === userId, 'userId in token-login response does not match.');
+    assert(home.length > 0, 'No home in token-login response.');
     this.log.debug('currentHomeSeq:', currentHomeSeq);
     this.log.debug('homes.homeSeq:', home.map(h => h.homeSeq));
 
@@ -98,8 +98,8 @@ export class NavienSessionManager {
     // login to get new aws session
     const { accessToken } = session;
     const { userId, accountSeq } = this._user;
-    const response = await this.auth.login2(accessToken, userId, accountSeq);
-    assert(response.data, 'No data in login2 response.');
+    const response = await this.auth.tokenLogin(accessToken, userId, accountSeq);
+    assert(response.data, 'No data in token-login response.');
 
     // save new aws session
     const { authInfo } = response.data;

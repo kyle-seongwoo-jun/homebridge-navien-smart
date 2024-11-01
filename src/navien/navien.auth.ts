@@ -5,7 +5,7 @@ import { URLSearchParams } from 'url';
 
 import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
 import { ApiException, AuthException } from './exceptions';
-import { Login2Response, LoginResponse, RefreshTokenResponse, ResponseCode } from './interfaces';
+import { LoginResponse, RefreshTokenResponse, ResponseCode, TokenLoginResponse } from './interfaces';
 
 const fetchWithCookies = fetchCookie(fetch);
 
@@ -62,7 +62,7 @@ export class NavienAuth {
     return loginResponse;
   }
 
-  async login2(accessToken: string, userId: string, accountSeq: number): Promise<Login2Response> {
+  async tokenLogin(accessToken: string, userId: string, accountSeq: number): Promise<TokenLoginResponse> {
     this.log.info(`Logging in with accessToken: ${accessToken}, userId: ${userId}, accountSeq: ${accountSeq}`);
 
     const response = await fetch(`${API_URL}/users/secured-sign-in`, {
@@ -77,7 +77,7 @@ export class NavienAuth {
       }),
     });
 
-    const json = await response.json() as Login2Response;
+    const json = await response.json() as TokenLoginResponse;
     if (json.code !== ResponseCode.SUCCESS) {
       throw ApiException.from(json);
     }
