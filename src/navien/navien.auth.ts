@@ -1,3 +1,4 @@
+import assert from 'assert';
 import fetchCookie from 'fetch-cookie';
 import { Logger } from 'homebridge';
 import fetch from 'node-fetch';
@@ -78,6 +79,10 @@ export class NavienAuth {
     });
 
     const json = await response.json() as TokenLoginResponse;
+    if (response.status === 401) {
+      assert(json.msg === 'Unauthorized');
+      throw new AuthException('access token is expired.');
+    }
     if (json.code !== ResponseCode.SUCCESS) {
       throw ApiException.from(json);
     }

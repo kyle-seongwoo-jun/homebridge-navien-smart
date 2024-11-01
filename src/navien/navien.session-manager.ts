@@ -9,16 +9,37 @@ import { NavienAuth } from './navien.auth';
 import { NavienSession } from './navien.session';
 import { NavienUser } from './navien.user';
 
+/**
+ * Manages authentication sessions for the Navien API and AWS IoT.
+ *
+ * This class handles:
+ * - Session initialization and storage
+ * - Token refresh and management
+ * - User authentication state
+ * - AWS IoT session management
+ *
+ * Authentication can be done in two ways:
+ * 1. Account credentials (username/password)
+ * 2. Refresh token
+ *
+ * The session manager maintains:
+ * - NavienSession: Contains access/refresh tokens for API auth
+ * - AwsSession: Contains credentials for AWS IoT connectivity
+ * - NavienUser: Contains user identification info
+ *
+ * Sessions are persisted to storage and can be restored between plugin restarts.
+ * Token refresh is handled automatically when tokens expire.
+ */
 export class NavienSessionManager {
   private _session?: NavienSession;
   private _awsSession?: AwsSession;
   private _user?: NavienUser;
 
   constructor(
-      private readonly log: Logger,
-      private readonly auth: NavienAuth,
-      private readonly storage: Persist,
-      private readonly config: NavienPlatformConfig,
+    private readonly log: Logger,
+    private readonly auth: NavienAuth,
+    private readonly storage: Persist,
+    private readonly config: NavienPlatformConfig,
   ) { }
 
   public get session(): NavienSession | undefined {
@@ -33,17 +54,34 @@ export class NavienSessionManager {
     return this._user;
   }
 
+
+  /**
+   * Initializes the session manager by:
+   * 1. Loading session from storage or config.json
+   * 2. Performing token login with the loaded session
+   * 3. If token login fails, refreshes token and retries
+   * 4. Saves the valid session and user info to storage
+   *
+   * The session can be loaded from:
+   * - Previously saved session in storage
+   * - Config.json using account credentials
+   * - Config.json using refresh token
+   *
+   * @throws {ConfigurationException} If required config values are missing
+   * @throws {AuthException} If authentication fails
+   */
   public async ready() {
     await this.storage.init();
 
-    // load session (stored or with config)
-    const { session, userId, accountSeq } = await this._loadSession();
+    // load session (from stored or config)
+    const {
+      session,
+      userId,
+      accountSeq,
+    } = await this._loadSession();
 
     // login with session
-    const response = await this.auth.tokenLogin(session.accessToken, userId, accountSeq);
-    assert(response.data, 'No data in token-login response.');
-
-    const { userInfo, currentHomeSeq, home, authInfo } = response.data;
+    const { userInfo, currentHomeSeq, home, authInfo } = await this._tokenLogin(session, userId, accountSeq);
     assert(userInfo.userId === userId, 'userId in token-login response does not match.');
     assert(home.length > 0, 'No home in token-login response.');
     this.log.debug('currentHomeSeq:', currentHomeSeq);
@@ -65,7 +103,20 @@ export class NavienSessionManager {
     ]);
   }
 
-  public async refreshSession() {
+  /**
+   * Refreshes the current session by requesting a new access token using the refresh token.
+   *
+   * This method:
+   * 1. Checks if there is an active session
+   * 2. Requests a new access token using the current refresh token
+   * 3. Creates a new session with the refreshed token info
+   * 4. Saves the new session to storage
+   *
+   * @returns {Promise<NavienSession>} A new session with refreshed access token
+   * @throws {Error} If ready() has not been called first
+   * @throws {ConfigurationException} If the refresh token is expired or invalid
+   */
+  public async refreshSession(): Promise<NavienSession> {
     const { session } = this;
     if (!session) {
       throw new Error('Please call ready() first.');
@@ -74,7 +125,11 @@ export class NavienSessionManager {
     // refresh token
     const response = await this.auth.refreshToken(session.refreshToken);
     if (!response.data) {
-      throw new AuthException(`Refresh token may be expired. refreshToken: ${session.refreshToken}`);
+      // saved refresh token may be expired
+      throw new ConfigurationException(
+        'refreshToken',
+        'refreshToken has expired. Please login again to get new one and update your config.json',
+      );
     }
 
     // save new session
@@ -84,7 +139,16 @@ export class NavienSessionManager {
     return newSession;
   }
 
-  public async refreshAwsSession() {
+  /**
+   * Refreshes the current AWS IoT session by:
+   * 1. Checking if there is an active session
+   * 2. Refreshing the Navien API session if expired
+   * 3. Logging in to get a new AWS IoT session
+   *
+   * @returns {Promise<AwsSession>} A new AWS IoT session
+   * @throws {Error} If ready() has not been called first
+   */
+  public async refreshAwsSession(): Promise<AwsSession> {
     if (!this._session || !this._user) {
       throw new Error('Please call ready() first.');
     }
@@ -96,18 +160,24 @@ export class NavienSessionManager {
     }
 
     // login to get new aws session
-    const { accessToken } = session;
     const { userId, accountSeq } = this._user;
-    const response = await this.auth.tokenLogin(accessToken, userId, accountSeq);
-    assert(response.data, 'No data in token-login response.');
+    const { authInfo } = await this._tokenLogin(session, userId, accountSeq);
 
     // save new aws session
-    const { authInfo } = response.data;
     const awsSession = this._awsSession = AwsSession.fromResponse(authInfo);
 
     return awsSession;
   }
 
+  /**
+   * Loads or creates a session by checking storage first, then config if needed.
+   * If a valid session exists in storage, it will be used. Otherwise creates
+   * a new session using authentication info from config.json
+   *
+   * @returns Session info containing session, userId and accountSeq
+   * @throws ConfigurationException if required config values are missing or refresh token is expired
+   * @throws AuthException if authentication fails
+   */
   private async _loadSession() {
     let session: NavienSession;
     let userId: string;
@@ -128,8 +198,18 @@ export class NavienSessionManager {
     return { session, userId, accountSeq };
   }
 
+  /**
+   * Loads user and session objects by deserializing data from storage.
+   * Returns `undefined` if:
+   * - No saved data exists
+   * - Deserialization fails
+   * - Current config differs from config at time of storage
+   *
+   * @returns Object containing session and user if successful, undefined otherwise
+   * @throws {ConfigurationException} when refresh token is expired
+   */
   private async _loadSessionFromStorage() {
-    // load session and user from storage
+    // deserialize data from storage
     let session: NavienSession | undefined;
     let user: NavienUser | undefined;
     try {
@@ -139,6 +219,7 @@ export class NavienSessionManager {
       // reach here if json schema is changed to new version
       // return undefined to force re-login
       this.log.warn('Failed to load session from storage:', error);
+      await this.storage.clear();
       return undefined;
     }
 
@@ -148,24 +229,28 @@ export class NavienSessionManager {
       return undefined;
     }
 
-    const { authMode, username, accountSeq, refreshToken } = this.config;
-
-    // config changed
-    if (user.userId !== username
-        || (authMode === 'token' && (user.accountSeq !== accountSeq || session.refreshToken !== refreshToken))
-    ) {
+    // config has changed
+    const config = this.config;
+    if (config.username !== user.userId || (
+      config.authMode === 'token' && (
+        config.accountSeq !== user.accountSeq ||
+        config.refreshToken !== session.refreshToken
+      )
+    )) {
       this.log.warn('saved session is not matched with config.');
+      await this.storage.clear();
       return undefined;
     }
 
     // refresh token if expired
     if (session.isTokenExpired()) {
       const response = await this.auth.refreshToken(session.refreshToken);
-
-      // saved refresh token may be expired
       if (!response.data) {
-        this.log.warn('saved refresh token may be expired.');
-        return undefined;
+        // saved refresh token may be expired
+        throw new ConfigurationException(
+          'refreshToken',
+          'refreshToken has expired. Please login again to get new one and update your config.json',
+        );
       }
 
       session = NavienSession.fromAuthInfo(response.data.authInfo, session.refreshToken);
@@ -174,6 +259,14 @@ export class NavienSessionManager {
     return { session, user };
   }
 
+  /**
+   * Load session from config.json based on auth mode
+   * - For 'account' mode: Login using ID and password
+   * - For 'token' mode: Generate new access token using refresh token
+   *
+   * @returns Session info including session, userId and accountSeq
+   * @throws ConfigurationException if required config values are missing or invalid
+   */
   private async _loadSessionWithConfig() {
     const { authMode, username, password, accountSeq, refreshToken } = this.config;
 
@@ -203,12 +296,12 @@ export class NavienSessionManager {
         throw ConfigurationException.empty('refreshToken');
       }
 
-      // refresh token
+      // generate new access token
       const response = await this.auth.refreshToken(refreshToken);
       if (!response.data) {
         throw new ConfigurationException(
           'refreshToken',
-          'refreshToken may be expired. Please login again to get new one and update your config.json',
+          'refreshToken has expired. Please login again to get new one and update your config.json',
         );
       }
 
@@ -222,5 +315,40 @@ export class NavienSessionManager {
 
     // should not reach here
     throw ConfigurationException.invalid('authMode', authMode, { validValue: 'account or token' });
+  }
+
+  /**
+   * Performs token login with the provided session and handles token refresh if needed.
+   *
+   * @param session Current NavienSession containing access and refresh tokens
+   * @param userId User ID to authenticate with
+   * @param accountSeq Account sequence number for the user
+   * @returns Response data from successful token login
+   * @throws AuthException if authentication fails
+   */
+  private async _tokenLogin(session: NavienSession, userId: string, accountSeq: number) {
+    // login with access token
+    const response = await this.auth.tokenLogin(session.accessToken, userId, accountSeq)
+      .catch(async (error) => {
+        // access token is expired
+        if (error instanceof AuthException) {
+          // refresh token
+          const response = await this.auth.refreshToken(session.refreshToken);
+          if (!response.data) {
+            // saved refresh token may be expired
+            throw new ConfigurationException(
+              'refreshToken',
+              'refreshToken has expired. Please login again to get new one and update your config.json',
+            );
+          }
+
+          // login with new access token
+          return this.auth.tokenLogin(response.data.authInfo.accessToken, userId, accountSeq);
+        }
+        throw error;
+      });
+    assert(response.data, 'No data in token-login response.');
+
+    return response.data;
   }
 }
