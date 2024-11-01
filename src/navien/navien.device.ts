@@ -30,7 +30,7 @@ export class NavienDevice {
     this.subcription = this.pubsub.deviceStatusChanges(this.id).subscribe((event) => {
       this.log.debug('[AWS PubSub] device status changed:', JSON.stringify(event));
 
-      const state = event.state.reported!;
+      const state = event.payload.state.reported!;
       const isActive = state.operationMode === OperationMode.ON;
       const leftTemperature = state.heater.left.temperature.set;
       const rightTemperature = state.heater.right.temperature.set;

@@ -7,7 +7,7 @@ import WebSocket from 'ws';
 
 import { AwsSession } from './aws.session';
 import { AWS_IOT_ENDPOINT, AWS_IOT_REGION } from './constants';
-import { DeviceEvent } from './interfaces';
+import { NavienDeviceEvent } from './interfaces';
 
 // this is required because of mqtt lib is designed for browser and it uses global.WebSocket
 // see https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/294
@@ -17,7 +17,7 @@ export class AwsPubSub {
   private readonly _pubsub: PubSub;
   private readonly _connectionStateSubject = new BehaviorSubject<ConnectionState>(ConnectionState.Disconnected);
 
-  constructor(homeSeq: number, awsSession: AwsSession) {
+  constructor(userSeq: number, readonly homeSeq: number, awsSession: AwsSession) {
     // set aws session
     this.setSession(awsSession);
 
@@ -34,7 +34,7 @@ export class AwsPubSub {
     this._pubsub = new PubSub({
       region: AWS_IOT_REGION,
       endpoint: `wss://${AWS_IOT_ENDPOINT}/mqtt`,
-      clientId: `${uuidv4()}-${homeSeq}`,
+      clientId: `${uuidv4()}-U${userSeq}`,
     });
   }
 
@@ -59,17 +59,15 @@ export class AwsPubSub {
     return this._connectionStateSubject.asObservable();
   }
 
-  public deviceStatusChanges(deviceId: string): Observable<DeviceEvent> {
+  public deviceStatusChanges(deviceId: string): Observable<NavienDeviceEvent> {
     return this._pubsub.subscribe({
-      topics: [
-        `$aws/things/${deviceId}/shadow/name/status/get/accepted`,
-        `$aws/things/${deviceId}/shadow/name/status/update/accepted`,
-      ],
+      topics: `${this.homeSeq}/mate/+`,
     }).pipe(
       // event is Record<string, unknown> type, so we double cast it
-      map((event) => event as unknown as DeviceEvent),
-      // ignore if it doesn't have state.reported
-      filter((event) => !!event.state.reported),
+      map((event) => event as unknown as NavienDeviceEvent),
+      // filter only necessary events
+      filter((event) => event.topic.includes(deviceId) && event.topic.endsWith('/accepted')),
+      filter((event) => !!event.payload.state.reported),
     );
   }
 }
