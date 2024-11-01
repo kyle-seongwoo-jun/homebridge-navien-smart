@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.6.0...v1.6.1) (2024-11-01)
+
+
+### Bug Fixes
+
+* **login:** add missing refreshToken logic that should be called ([9fec8fd](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/9fec8fdbfcfd7b5ccb361b856ed271dcf010e24c))
+* **pubsub:** update with new topic ([5cd05ce](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/5cd05ce807da9fb9852cb4f0e1563191a0ffd8c3))
+
 ## [1.6.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.5.0...v1.6.0) (2024-10-14)
 
 
