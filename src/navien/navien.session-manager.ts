@@ -118,7 +118,7 @@ export class NavienSessionManager {
     // refresh token
     const response = await this.auth.refreshToken(session.refreshToken);
     if (!response.data) {
-      // saved refresh token may be expired
+      // saved refresh token has expired
       throw new ConfigurationException(
         'refreshToken',
         'refreshToken has expired. Please login again to get new one and update your config.json',
@@ -240,11 +240,17 @@ export class NavienSessionManager {
     if (session.isTokenExpired()) {
       const response = await this.auth.refreshToken(session.refreshToken);
       if (!response.data) {
-        // saved refresh token may be expired
-        throw new ConfigurationException(
-          'refreshToken',
-          'refreshToken has expired. Please login again to get new one and update your config.json',
-        );
+        // saved refresh token has expired
+        if (config.authMode === 'token') {
+          throw new ConfigurationException(
+            'refreshToken',
+            'refreshToken has expired. Please login again to get new one and update your config.json',
+          );
+        }
+        // if auth mode is account, just ignore expired refresh token
+        this.log.warn('saved refresh token has expired.');
+        await this.storage.clear();
+        return undefined;
       }
 
       session = NavienSession.fromAuthInfo(response.data.authInfo, session.refreshToken);
@@ -347,7 +353,7 @@ export class NavienSessionManager {
           // refresh token
           const response = await this.auth.refreshToken(session.refreshToken);
           if (!response.data) {
-            // saved refresh token may be expired
+            // saved refresh token has expired
             throw new ConfigurationException(
               'refreshToken',
               'refreshToken has expired. Please login again to get new one and update your config.json',
