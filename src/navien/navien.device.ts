@@ -40,12 +40,15 @@ export class NavienDevice {
 
       // status update
       const isActive = state.operationMode === OperationMode.ON;
-      const temperature = ('single' in state.heater ?
-        state.heater.single :
-        state.heater.left // TODO: handle left and right
+      const temperature = ('left' in state.heater ?
+        state.heater.left : // TODO: handle left and right
+        state.heater.single
       ).temperature.set;
+      const doubleTemperature = 'left' in state.heater ?
+        { left: state.heater.left.temperature.set, right: state.heater.right.temperature.set } :
+        temperature;
       const isLocked = state.childLock;
-      this.log.info('[AWS PubSub] current status:', { name: this.name, isActive, temperature, isLocked });
+      this.log.info('[AWS PubSub] current status:', { name: this.name, isActive, temperature: doubleTemperature, isLocked });
 
       this.isActive = isActive;
       this.temperature = temperature;
