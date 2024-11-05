@@ -22,7 +22,7 @@ export interface Properties {
 
 export interface PropertiesNickName {
     mainItem: string;
-    side: Side;
+    side?: Side;
 }
 
 export interface Side {
@@ -133,9 +133,9 @@ export interface DeviceInfo {
 }
 
 export interface DeviceNickName {
-    left: string;
+    left?: string;
     main: string;
-    right: string;
+    right?: string;
 }
 
 export interface Wifi {

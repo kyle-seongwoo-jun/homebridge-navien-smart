@@ -2,7 +2,7 @@ import assert from 'assert';
 import { Logger } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
-import { OperationMode } from '../aws/interfaces';
+import { DoubleHeaterState, HeaterItemState, HeaterState, OperationMode, SingleHeaterState } from '../aws/interfaces';
 import { API_URL } from './constants';
 import { ApiException } from './exceptions';
 import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
@@ -159,31 +159,42 @@ export class NavienApi {
     });
   }
 
-  public setTemperature(device: Device, temperature: number, range: { min: number; max: number; step: number }) {
+  public setTemperature(device: Device, temperature: number | [number, number], range: { min: number; max: number; step: number }) {
     // validate temperature
     const { min, max, step } = range;
-    if (temperature < min || temperature > max) {
-      throw new Error(`Temperature must be between ${min} and ${max}. current: ${temperature}`);
-    }
-    if (temperature % step !== 0) {
-      throw new Error(`Temperature must be multiple of ${step}. current: ${temperature}`);
+    const validateTemperature = (temperature: number) => {
+      if (temperature < min || temperature > max) {
+        throw new Error(`Temperature must be between ${min} and ${max}. current: ${temperature}`);
+      }
+      if (temperature % step !== 0) {
+        throw new Error(`Temperature must be multiple of ${step}. current: ${temperature}`);
+      }
+    };
+    if (typeof temperature === 'number') {
+      validateTemperature(temperature);
+    } else {
+      validateTemperature(temperature[0]);
+      validateTemperature(temperature[1]);
     }
 
-    return this.controlDevice(device, {
-      heater: {
-        left: {
-          enable: temperature > min,
-          temperature: {
-            set: temperature,
-          },
-        },
-        right: {
-          enable: temperature > min,
-          temperature: {
-            set: temperature,
-          },
-        },
+    // create heater payload
+    const heaterItem = (temperature: number) => (<HeaterItemState>{
+      enable: temperature > min,
+      temperature: {
+        set: temperature,
       },
+    });
+    const heater: HeaterState = typeof temperature === 'number' ?
+      <SingleHeaterState>{
+        single: heaterItem(temperature),
+      } :
+      <DoubleHeaterState>{
+        left: heaterItem(temperature[0]),
+        right: heaterItem(temperature[1]),
+      };
+
+    return this.controlDevice(device, {
+      heater: heater,
     });
   }
 

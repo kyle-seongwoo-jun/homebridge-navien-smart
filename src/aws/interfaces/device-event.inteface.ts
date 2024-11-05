@@ -48,7 +48,13 @@ export enum OperationMode {
     ON = 1,
 }
 
-export interface HeaterState {
+export type HeaterState = SingleHeaterState | DoubleHeaterState;
+
+export interface SingleHeaterState {
+    single: HeaterItemState;
+}
+
+export interface DoubleHeaterState {
     left: HeaterItemState;
     right: HeaterItemState;
 }
