@@ -93,14 +93,7 @@ export class NavienSessionManager {
     const user = new NavienUser(userId, accountSeq, userSeq, homeSeq);
 
     // save session
-    this._session = session;
-    this._awsSession = awsSession;
-    this._user = user;
-
-    await Promise.all([
-      this.storage.set('session', session),
-      this.storage.set('user', user),
-    ]);
+    await this._saveSession({ session, awsSession, user });
   }
 
   /**
@@ -133,8 +126,8 @@ export class NavienSessionManager {
     }
 
     // save new session
-    const newSession = this._session = NavienSession.fromAuthInfo(response.data.authInfo, session.refreshToken);
-    await this.storage.set('session', session);
+    const newSession = NavienSession.fromAuthInfo(response.data.authInfo, session.refreshToken);
+    await this._saveSession({ session: newSession });
 
     return newSession;
   }
@@ -164,7 +157,8 @@ export class NavienSessionManager {
     const { authInfo } = await this._tokenLogin(session, userId, accountSeq);
 
     // save new aws session
-    const awsSession = this._awsSession = AwsSession.fromResponse(authInfo);
+    const awsSession = AwsSession.fromResponse(authInfo);
+    await this._saveSession({ awsSession });
 
     return awsSession;
   }
@@ -315,6 +309,24 @@ export class NavienSessionManager {
 
     // should not reach here
     throw ConfigurationException.invalid('authMode', authMode, { validValue: 'account or token' });
+  }
+
+  /**
+   * Saves the session and user info to storage.
+   */
+  private async _saveSession({ session, awsSession, user }: { session?: NavienSession; awsSession?: AwsSession; user?: NavienUser }) {
+    this.log.debug('Saving session:', { session, awsSession, user });
+
+    // update fields if provided
+    this._session = session ?? this._session;
+    this._awsSession = awsSession ?? this._awsSession;
+    this._user = user ?? this._user;
+
+    // save to storage
+    await Promise.all([
+      session && this.storage.set('session', session),
+      user && this.storage.set('user', user),
+    ].filter(Boolean));
   }
 
   /**
