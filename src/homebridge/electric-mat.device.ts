@@ -35,10 +35,15 @@ export default class ElectricMat {
       .setCharacteristic(Characteristic.SerialNumber, device.id);
 
     // set heater or thermostat service
-    if (accessoryType === 'HeaterCooler') {
-      this.heater = this.initializeHeater(device);
-    } else if (accessoryType === 'Thermostat') {
-      this.thermostat = this.initializeThermostat(device);
+    switch (accessoryType) {
+      case 'HeaterCooler':
+        this.heater = this.initializeHeater(device);
+        break;
+      case 'Thermostat':
+        this.thermostat = this.initializeThermostat(device);
+        break;
+      default:
+        throw new Error(`Invalid accessory type: ${accessoryType}`);
     }
   }
 
@@ -62,6 +67,7 @@ export default class ElectricMat {
         HeaterCooler,
       },
     } = this.platform;
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
 
     const heater = this.accessory.getService(HeaterCooler)
       || this.accessory.addService(HeaterCooler);
@@ -112,13 +118,26 @@ export default class ElectricMat {
 
     // subscribe to device events
     device.activeChanges.subscribe((isActive) => {
+      if (isActive === null) {
+        heater.updateCharacteristic(Active, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        return;
+      }
       heater.updateCharacteristic(Active, isActive ? Active.ACTIVE : Active.INACTIVE);
     });
     device.temperatureChanges.subscribe((temperature) => {
+      if (temperature === null) {
+        heater.updateCharacteristic(CurrentTemperature, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        heater.updateCharacteristic(HeatingThresholdTemperature, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        return;
+      }
       heater.updateCharacteristic(CurrentTemperature, temperature);
       heater.updateCharacteristic(HeatingThresholdTemperature, temperature);
     });
     device.lockedChanges.subscribe((isLocked) => {
+      if (isLocked === null) {
+        heater.updateCharacteristic(LockPhysicalControls, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        return;
+      }
       heater.updateCharacteristic(LockPhysicalControls, isLocked);
     });
 
@@ -209,7 +228,13 @@ export default class ElectricMat {
 
   private async getActive(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isActive } = this.device;
+
+    if (isActive === null) {
+      this.log.info('Get Active: not responding');
+      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
 
     this.log.info('Get Active:', isActive ? 'ACTIVE' : 'INACTIVE');
 
@@ -228,7 +253,13 @@ export default class ElectricMat {
 
   private async getHeaterState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isActive, isIdle } = this.device;
+
+    if (isActive === null) {
+      this.log.info('Get Heater State: not responding');
+      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
 
     const state = (() => {
       if (!isActive) {
@@ -246,7 +277,13 @@ export default class ElectricMat {
 
   private async getHeatingState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isActive } = this.device;
+
+    if (isActive === null) {
+      this.log.info('Get Heating State: not responding');
+      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
 
     this.log.info('Get Heating State:', isActive ? 'HEAT' : 'OFF');
 
@@ -264,7 +301,13 @@ export default class ElectricMat {
   }
 
   private async getTemperature(): Promise<CharacteristicValue> {
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { temperature } = this.device;
+
+    if (temperature === null) {
+      this.log.info('Get Temperature: not responding');
+      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
 
     this.log.info('Get Temperature:', temperature);
 
@@ -280,7 +323,13 @@ export default class ElectricMat {
   }
 
   private async getLocked(): Promise<CharacteristicValue> {
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isLocked } = this.device;
+
+    if (isLocked === null) {
+      this.log.info('Get Locked: not responding');
+      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
 
     this.log.info('Get Locked:', isLocked);
 

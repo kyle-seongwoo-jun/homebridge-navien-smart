@@ -6,18 +6,14 @@ import { AwsPubSub } from '../aws/pubsub';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
 
-const DEFALUT_IS_ACTIVE = false;
-const DEFALUT_TEMPERATURE = 30;
-const DEFALUT_IS_LOCKED = false;
-
 export class NavienDevice {
-  private _isActive = DEFALUT_IS_ACTIVE;
-  private _temperature = DEFALUT_TEMPERATURE;
-  private _isLocked = DEFALUT_IS_LOCKED;
+  private _isActive: boolean | null = null;
+  private _temperature: number | null = null;
+  private _isLocked: boolean | null = null;
 
-  private readonly isActiveSubject = new BehaviorSubject<boolean>(DEFALUT_IS_ACTIVE);
-  private readonly temperatureSubject = new BehaviorSubject<number>(DEFALUT_TEMPERATURE);
-  private readonly isLockedSubject = new BehaviorSubject<boolean>(DEFALUT_IS_LOCKED);
+  private readonly isActiveSubject = new BehaviorSubject<boolean | null>(null);
+  private readonly temperatureSubject = new BehaviorSubject<number | null>(null);
+  private readonly isLockedSubject = new BehaviorSubject<boolean | null>(null);
   private readonly subcription: Subscription;
 
   constructor(
@@ -31,6 +27,17 @@ export class NavienDevice {
       this.log.debug('[AWS PubSub] device status changed:', JSON.stringify(event));
 
       const state = event.payload.state.reported!;
+
+      // state has connected property only when device is disconnected
+      if (!state.connected) {
+        this.log.info('[AWS PubSub] device disconnected', { name: this.name });
+        this.isActive = false;
+        this.temperature = null;
+        this.isLocked = null;
+        return;
+      }
+
+      // status update
       const isActive = state.operationMode === OperationMode.ON;
       const leftTemperature = state.heater.left.temperature.set;
       const rightTemperature = state.heater.right.temperature.set;
@@ -76,7 +83,7 @@ export class NavienDevice {
     return this._isActive;
   }
 
-  set isActive(value: boolean) {
+  set isActive(value: boolean | null) {
     if (this._isActive === value) {
       return;
     }
@@ -93,7 +100,7 @@ export class NavienDevice {
     return this._temperature;
   }
 
-  set temperature(value: number) {
+  set temperature(value: number | null) {
     if (this._temperature === value) {
       return;
     }
@@ -105,7 +112,7 @@ export class NavienDevice {
     return this._isLocked;
   }
 
-  set isLocked(value: boolean) {
+  set isLocked(value: boolean | null) {
     if (this._isLocked === value) {
       return;
     }

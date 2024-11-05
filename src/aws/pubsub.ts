@@ -60,13 +60,14 @@ export class AwsPubSub {
   }
 
   public deviceStatusChanges(deviceId: string): Observable<NavienDeviceEvent> {
+    const eventName = 'status'; // status, schedule, sleep, etc.
     return this._pubsub.subscribe({
       topics: `${this.homeSeq}/mate/+`,
     }).pipe(
       // event is Record<string, unknown> type, so we double cast it
       map((event) => event as unknown as NavienDeviceEvent),
       // filter only necessary events
-      filter((event) => event.topic.includes(deviceId) && event.topic.endsWith('/accepted')),
+      filter((event) => event.topic === `$aws/things/${deviceId}/shadow/name/${eventName}/update/accepted`),
       filter((event) => !!event.payload.state.reported),
     );
   }
