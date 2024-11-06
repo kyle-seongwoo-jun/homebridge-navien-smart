@@ -10,7 +10,7 @@
 
 </span>
 
-[🇺🇸 English Version](README.md) | **[🇰🇷 한국어 버전](README-ko.md)**
+[🇺🇸 English](README.md) | **[🇰🇷 한국어](README-ko.md)**
 
 ## 둘러보기
 
@@ -22,9 +22,9 @@
 
 ### ⚠️ 경고
 
-이 플러그인은 `나비엔 EME520 (퀸 사이즈)` 모델에서만 테스트되었습니다. 다른 모델에서는 작동하지 않을 수 있습니다. 다른 모델을 사용하는 경우 지원 요청 이슈를 열어주세요.
+이 플러그인은 `나비엔 EME520` 모델에서만 테스트되었습니다. 다른 모델에서는 작동하지 않을 수 있습니다. 다른 모델을 사용하는 경우 [관련 이슈](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24)에 댓글을 남겨주세요.
 
-자세한 정보는 [구현 상태](#구현-상태)를 참조하세요.
+자세한 정보는 [모델별 구현 상태](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24)를 참조하세요.
 
 ## 설치
 
@@ -68,16 +68,6 @@ npm i -g homebridge-navien-smart
 비밀번호를 설정 파일에 넣고 싶지 않은 경우 `authMode`를 `token`으로 설정하고 대신 `refreshToken`과 `accountSeq`를 사용할 수 있습니다.
 
 `refreshToken`과 `accountSeq`는 `navien` CLI를 통해 얻을 수 있습니다. 자세한 내용은 [CLI 사용방법](#cli-사용방법)을 참조하세요.
-
-## 구현 상태
-
-| *장치*       | *구현* | *상태* | *제어* |
-|----------------| --- | --- | --- |
-| 보일러         | 🚫 | 🚫 | 🚫 |
-| EME 모델     | ✔️ | ✔️ | ✔️ |
-| EQM 모델     | 🚫 | 🚫 | 🚫 |
-
-다른 장치 지원을 원하시면 이슈 요청을 열어주세요.
 
 ## CLI 사용방법
 

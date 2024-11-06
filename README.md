@@ -10,7 +10,7 @@
 
 </span>
 
-**[🇺🇸 English Version](README.md)** | [🇰🇷 한국어 버전](README-ko.md)
+**[🇺🇸 English](README.md)** | [🇰🇷 한국어](README-ko.md)
 
 ## Overview
 
@@ -22,9 +22,9 @@ A plugin for interacting with the "Navien Smart" system, which can control Navie
 
 ### ⚠️ Warning
 
-This plugin is only tested with `Navien EME520 (Queen size)` model. It may not work with other models. If you have a different model, please open an issue to support your model.
+This plugin is only tested with `Navien EME520` model. It may not work with other models. If you have a different model, please comment on [this issue](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24) to support your model.
 
-See [Implementation Status](#implementation-status) for more information.
+See [Implementation Status](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24) for more information.
 
 ## Installation
 
@@ -68,16 +68,6 @@ npm i -g homebridge-navien-smart
 If you don't want to put your password in the config, you can use `authMode` = `token` and use `refreshToken` and `accountSeq` instead.
 
 You can get `refreshToken` and `accountSeq` with `navien` cli. See [CLI Usage](#cli-usage).
-
-## Implementation Status
-
-| *Device*       | *Implementation* | *Status* | *Control* |
-|----------------| --- | --- | --- |
-| Boiler         | 🚫 | 🚫 | 🚫 |
-| EME Models     | ✔️ | ✔️ | ✔️ |
-| EQM Models     | 🚫 | 🚫 | 🚫 |
-
-for more device support please open issue request.
 
 ## CLI Usage
 
