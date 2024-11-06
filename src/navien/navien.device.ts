@@ -10,6 +10,7 @@ export class NavienDevice {
   private _isActive: boolean | null = null;
   private _temperature: number | null = null;
   private _isLocked: boolean | null = null;
+  private _isDouble: boolean | null = null;
 
   private readonly isActiveSubject = new BehaviorSubject<boolean | null>(null);
   private readonly temperatureSubject = new BehaviorSubject<number | null>(null);
@@ -39,15 +40,20 @@ export class NavienDevice {
 
       // status update
       const isActive = state.operationMode === OperationMode.ON;
-      const leftTemperature = state.heater.left.temperature.set;
-      const rightTemperature = state.heater.right.temperature.set;
-      const temperature = leftTemperature; // TODO: handle left and right
+      const temperature = ('left' in state.heater ?
+        state.heater.left : // TODO: handle left and right
+        state.heater.single
+      ).temperature.set;
+      const doubleTemperature = 'left' in state.heater ?
+        { left: state.heater.left.temperature.set, right: state.heater.right.temperature.set } :
+        temperature;
       const isLocked = state.childLock;
-      this.log.info('[AWS PubSub] current status:', { name: this.name, isActive, leftTemperature, rightTemperature, isLocked });
+      this.log.info('[AWS PubSub] current status:', { name: this.name, isActive, temperature: doubleTemperature, isLocked });
 
       this.isActive = isActive;
       this.temperature = temperature;
       this.isLocked = isLocked;
+      this._isDouble = 'left' in state.heater;
     });
   }
 
@@ -141,7 +147,13 @@ export class NavienDevice {
   }
 
   setTemperature(temperature: number) {
-    return this.api.setTemperature(this.json, temperature, this.functions.heatRange);
+    if (this._isDouble === null) {
+      this.log.warn('device seems to be initialized or disconnected. but setTemperature is called', this.name);
+      return Promise.resolve(); // do nothing
+    }
+
+    const temp = this._isDouble ? [temperature, temperature] as [number, number] : temperature;
+    return this.api.setTemperature(this.json, temp, this.functions.heatRange);
   }
 
   lock(isLocked: boolean) {
