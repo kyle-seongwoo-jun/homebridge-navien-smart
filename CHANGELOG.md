@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.6.1...v1.7.0) (2024-11-06)
+
+
+### Features
+
+* **api:** support single type of em models ([06516c0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/06516c02a3c305c4e064cc803aa4a1780a2dc67d))
+* **homebridge:** handle not responding device ([b523f16](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/b523f165a4f72caa01321826f7a4bd0f1b93f1d0))
+
+
+### Bug Fixes
+
+* **auth:** handle expired refresh token in account auth mode ([0fae675](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/0fae67595f42474bef2f706759b81c2b044033af))
+* **auth:** store new token after refresh instead of old token ([11af785](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/11af78548ca7a6bb8a8626056db6d1ebe9aaf854))
+
 ## [1.6.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.6.0...v1.6.1) (2024-11-01)
 
 
