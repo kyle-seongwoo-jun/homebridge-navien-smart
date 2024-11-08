@@ -73,7 +73,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
    * to start discovery of new accessories.
    */
   async onLaunched() {
-    this.log.info('Executed didFinishLaunching callback');
+    this.log.info('onLaunched called');
 
     // wait for the navien service to be ready
     try {

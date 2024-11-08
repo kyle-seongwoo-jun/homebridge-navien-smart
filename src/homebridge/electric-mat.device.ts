@@ -1,6 +1,7 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
 import { NavienDevice } from '../navien/navien.device';
+import { NavienDeviceStatusRepository } from '../navien/navien.device-status';
 import { NavienService } from '../navien/navien.service';
 import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform';
 
@@ -9,6 +10,7 @@ export default class ElectricMat {
   private readonly thermostat?: Service;
   private readonly service: NavienService;
   private readonly device: NavienDevice;
+  private readonly deviceStatus: NavienDeviceStatusRepository;
 
   constructor(
     private readonly platform: NavienHomebridgePlatform,
@@ -27,6 +29,7 @@ export default class ElectricMat {
 
     const { device } = accessory.context;
     this.device = device;
+    this.deviceStatus = this.service.getDeviceStatusRepositoryOf(device)!;
 
     // set accessory information
     this.accessory.getService(Service.AccessoryInformation)!
@@ -117,14 +120,14 @@ export default class ElectricMat {
       .onSet(this.setLocked.bind(this));
 
     // subscribe to device events
-    device.activeChanges.subscribe((isActive) => {
+    this.deviceStatus.activeChanges.subscribe((isActive) => {
       if (isActive === null) {
         heater.updateCharacteristic(Active, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         return;
       }
       heater.updateCharacteristic(Active, isActive ? Active.ACTIVE : Active.INACTIVE);
     });
-    device.temperatureChanges.subscribe((temperature) => {
+    this.deviceStatus.temperatureChanges.subscribe((temperature) => {
       if (temperature === null) {
         heater.updateCharacteristic(CurrentTemperature, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         heater.updateCharacteristic(HeatingThresholdTemperature, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
@@ -133,7 +136,7 @@ export default class ElectricMat {
       heater.updateCharacteristic(CurrentTemperature, temperature);
       heater.updateCharacteristic(HeatingThresholdTemperature, temperature);
     });
-    device.lockedChanges.subscribe((isLocked) => {
+    this.deviceStatus.lockedChanges.subscribe((isLocked) => {
       if (isLocked === null) {
         heater.updateCharacteristic(LockPhysicalControls, new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         return;
@@ -207,7 +210,7 @@ export default class ElectricMat {
       .onGet(this.getTemperature.bind(this));
 
     // subscribe to device events
-    device.activeChanges.subscribe((isActive) => {
+    this.deviceStatus.activeChanges.subscribe((isActive) => {
       thermostat.updateCharacteristic(
         CurrentHeatingCoolingState,
         isActive ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
@@ -217,7 +220,7 @@ export default class ElectricMat {
         isActive ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
       );
     });
-    device.temperatureChanges.subscribe((temperature) => {
+    this.deviceStatus.temperatureChanges.subscribe((temperature) => {
       thermostat.updateCharacteristic(TargetTemperature, temperature);
       thermostat.updateCharacteristic(CurrentTemperature, temperature);
     });
@@ -229,7 +232,7 @@ export default class ElectricMat {
   private async getActive(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isActive } = this.device;
+    const { isActive } = this.deviceStatus;
 
     if (isActive === null) {
       this.log.info('Get Active: not responding');
@@ -254,7 +257,7 @@ export default class ElectricMat {
   private async getHeaterState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isActive, isIdle } = this.device;
+    const { isActive, isIdle } = this.deviceStatus;
 
     if (isActive === null) {
       this.log.info('Get Heater State: not responding');
@@ -278,7 +281,7 @@ export default class ElectricMat {
   private async getHeatingState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isActive } = this.device;
+    const { isActive } = this.deviceStatus;
 
     if (isActive === null) {
       this.log.info('Get Heating State: not responding');
@@ -302,7 +305,7 @@ export default class ElectricMat {
 
   private async getTemperature(): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { temperature } = this.device;
+    const { temperature } = this.deviceStatus;
 
     if (temperature === null) {
       this.log.info('Get Temperature: not responding');
@@ -324,7 +327,7 @@ export default class ElectricMat {
 
   private async getLocked(): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isLocked } = this.device;
+    const { isLocked } = this.deviceStatus;
 
     if (isLocked === null) {
       this.log.info('Get Locked: not responding');

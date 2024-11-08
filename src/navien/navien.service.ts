@@ -1,4 +1,5 @@
 import { ConnectionState } from '@aws-amplify/pubsub';
+import assert from 'assert';
 import { Logger } from 'homebridge';
 
 import { OperationMode } from '../aws/interfaces';
@@ -7,10 +8,12 @@ import { NavienException } from './exceptions';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
 import { NavienDevice } from './navien.device';
+import { NavienDeviceStatusRepository } from './navien.device-status';
 import { NavienSessionManager } from './navien.session-manager';
 
 export class NavienService {
   private pubsub?: AwsPubSub;
+  private deviceStatusRepositories?: Record<string, NavienDeviceStatusRepository>;
 
   constructor(
     private readonly log: Logger,
@@ -19,7 +22,7 @@ export class NavienService {
   ) { }
 
   public async ready() {
-    this.log.info('Ready to use Navien API');
+    this.log.info('Preparing Navien service...');
 
     // load session from storage or create new session
     await this.sessionManager.ready();
@@ -50,6 +53,12 @@ export class NavienService {
   public async getDevices() {
     this.log.info('Getting devices from Navien API');
 
+    if (this.deviceStatusRepositories !== undefined) {
+      this.log.info('Disposing old device status repositories...');
+      Object.values(this.deviceStatusRepositories).forEach((repository) => repository.dispose());
+      this.deviceStatusRepositories = undefined;
+    }
+
     // get devices from Navien API
     const jsonArray = await this.api.getDevices().catch((error) => {
       this.log.error('Error while getting devices from Navien API:', error);
@@ -57,7 +66,13 @@ export class NavienService {
     });
 
     // create devices from json
-    const devices = jsonArray.map((json) => new NavienDevice(this.log, this.pubsub!, json));
+    const devices = jsonArray.map((json) => new NavienDevice(json));
+    this.deviceStatusRepositories = Object.fromEntries(
+      devices.map((device) => [
+        device.id,
+        new NavienDeviceStatusRepository(this.log, this.pubsub!, device),
+      ]),
+    );
     this.log.info('Devices:', devices.map((device) => device.name));
 
     // load current state from AWS
@@ -70,6 +85,12 @@ export class NavienService {
     return devices;
   }
 
+  public getDeviceStatusRepositoryOf(device: NavienDevice) {
+    const repository = this.deviceStatusRepositories?.[device.id];
+    assert(repository !== undefined, `Device status repository for "${device.name}" not found`);
+    return repository;
+  }
+
   private _initializeDevice(device: NavienDevice) {
     return this.api.initializeDevice(device);
   }
@@ -79,7 +100,7 @@ export class NavienService {
   }
 
   private _setTemperature(device: NavienDevice, temperature: number) {
-    const isDouble = device.isDouble;
+    const { isDouble } = this.getDeviceStatusRepositoryOf(device)!;
     if (isDouble === null) {
       this.log.warn('device seems to be initialized or disconnected. but setTemperature is called', device.name);
       return Promise.resolve(); // do nothing
