@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.1...v1.7.2) (2024-11-08)
+
+
+### Bug Fixes
+
+* divide device & device status class to fix cache issue ([5750fdb](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/5750fdb07483ce0144cd759eea748e047478c404))
+
 ## [1.7.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.0...v1.7.1) (2024-11-08)
 
 
