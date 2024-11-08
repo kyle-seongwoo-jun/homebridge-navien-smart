@@ -3,8 +3,11 @@ import path from 'path';
 
 import ElectricMat from './homebridge/electric-mat.device';
 import { NavienException } from './navien/exceptions';
+import { NavienApi } from './navien/navien.api';
+import { NavienAuth } from './navien/navien.auth';
 import { NavienDevice } from './navien/navien.device';
 import { NavienService } from './navien/navien.service';
+import { NavienSessionManager } from './navien/navien.session-manager';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { Persist } from './utils/persist.util';
 
@@ -42,9 +45,14 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     this.log.info('Finished initializing platform:', config.platform);
 
     this.config = config as NavienPlatformConfig;
-    this.navienService = new NavienService(this, log);
 
-    this.api.on('didFinishLaunching', this.onLaunched);
+    // initialize navien services
+    const auth = new NavienAuth(log);
+    const sessionManager = new NavienSessionManager(log, auth, this._createPersist(), this.config);
+    const httpApi = new NavienApi(log, sessionManager);
+    this.navienService = new NavienService(log, sessionManager, httpApi);
+
+    this.api.on('didFinishLaunching', this.onLaunched.bind(this));
   }
 
   /**
@@ -64,8 +72,8 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
    * in order to ensure they weren't added to homebridge already. This event can also be used
    * to start discovery of new accessories.
    */
-  onLaunched = async () => {
-    this.log.info('Executed didFinishLaunching callback');
+  async onLaunched() {
+    this.log.info('onLaunched called');
 
     // wait for the navien service to be ready
     try {
@@ -85,11 +93,11 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     // run the method to discover / register your devices as accessories
     const devices = await this.navienService.getDevices();
     for (const device of devices) {
-      this.registerDeviceAsAccessory(device);
+      this._registerDeviceAsAccessory(device);
     }
-  };
+  }
 
-  registerDeviceAsAccessory(device: NavienDevice) {
+  private _registerDeviceAsAccessory(device: NavienDevice) {
     // generate a unique id for the accessory this should be generated from
     // something globally unique, but constant, for example, the device serial
     // number or MAC address
@@ -135,7 +143,12 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     }
   }
 
-  createPersist(...paths: string[]) {
+  /**
+   * Create a persist instance of the plugin
+   * @param paths - The paths to the directory
+   * @returns A persist instance
+   */
+  private _createPersist(...paths: string[]): Persist {
     const dir = path.join(this.api.user.storagePath(), PLUGIN_NAME, 'persist', ...paths);
     return new Persist(dir);
   }
