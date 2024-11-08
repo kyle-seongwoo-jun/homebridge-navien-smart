@@ -75,13 +75,17 @@ export class NavienSessionManager {
 
     // load session (from stored or config)
     const {
-      session,
+      session: loadedSession,
       userId,
       accountSeq,
     } = await this._loadSession();
 
     // login with session
-    const { userInfo, currentHomeSeq, home, authInfo } = await this._tokenLogin(session, userId, accountSeq);
+    let session = loadedSession;
+    const { userInfo, currentHomeSeq, home, authInfo } = await this._tokenLogin(
+      session, userId, accountSeq,
+      { onTokenRefreshed: (newSession) => session = newSession },
+    );
     assert(userInfo.userId === userId, 'userId in token-login response does not match.');
     assert(home.length > 0, 'No home in token-login response.');
     this.log.debug('currentHomeSeq:', currentHomeSeq);
@@ -153,12 +157,15 @@ export class NavienSessionManager {
     }
 
     // login to get new aws session
+    let newSession: NavienSession | undefined;
     const { userId, accountSeq } = this._user;
-    const { authInfo } = await this._tokenLogin(session, userId, accountSeq);
+    const { authInfo } = await this._tokenLogin(session, userId, accountSeq, {
+      onTokenRefreshed: (session) => newSession = session,
+    });
 
     // save new aws session
     const awsSession = AwsSession.fromResponse(authInfo);
-    await this._saveSession({ awsSession });
+    await this._saveSession({ session: newSession, awsSession });
 
     return awsSession;
   }
@@ -344,12 +351,18 @@ export class NavienSessionManager {
    * @returns Response data from successful token login
    * @throws AuthException if authentication fails
    */
-  private async _tokenLogin(session: NavienSession, userId: string, accountSeq: number) {
+  private async _tokenLogin(
+    session: NavienSession,
+    userId: string,
+    accountSeq: number,
+    { onTokenRefreshed }: { onTokenRefreshed?: (session: NavienSession) => void },
+  ) {
     // login with access token
     const response = await this.auth.tokenLogin(session.accessToken, userId, accountSeq)
       .catch(async (error) => {
         // access token is expired
         if (error instanceof AuthException) {
+          this.log.warn('access token is expired. Refreshing token...');
           // refresh token
           const response = await this.auth.refreshToken(session.refreshToken);
           if (!response.data) {
@@ -361,7 +374,9 @@ export class NavienSessionManager {
           }
 
           // login with new access token
-          return this.auth.tokenLogin(response.data.authInfo.accessToken, userId, accountSeq);
+          const newSession = NavienSession.fromAuthInfo(response.data.authInfo, session.refreshToken);
+          onTokenRefreshed?.(newSession);
+          return this.auth.tokenLogin(newSession.accessToken, userId, accountSeq);
         }
         throw error;
       });
