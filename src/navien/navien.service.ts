@@ -1,6 +1,7 @@
 import { ConnectionState } from '@aws-amplify/pubsub';
 import { Logger } from 'homebridge';
 
+import { OperationMode } from '../aws/interfaces';
 import { AwsPubSub } from '../aws/pubsub';
 import { NavienException } from './exceptions';
 import { Device } from './interfaces';
@@ -56,12 +57,12 @@ export class NavienService {
     });
 
     // create devices from json
-    const devices = jsonArray.map((json) => new NavienDevice(this.log, this.api, this.pubsub!, json));
+    const devices = jsonArray.map((json) => new NavienDevice(this.log, this.pubsub!, json));
     this.log.info('Devices:', devices.map((device) => device.name));
 
     // load current state from AWS
     devices.forEach((device) => {
-      device.initialize().catch((error) => {
+      this._initializeDevice(device).catch((error) => {
         this.log.error('Error while initializing device:', error);
       });
     });
@@ -69,10 +70,33 @@ export class NavienService {
     return devices;
   }
 
+  private _initializeDevice(device: NavienDevice) {
+    return this.api.initializeDevice(device);
+  }
+
+  private _activateDevice(device: NavienDevice, isActive: boolean) {
+    return this.api.setOperationMode(device, isActive ? OperationMode.ON : OperationMode.OFF);
+  }
+
+  private _setTemperature(device: NavienDevice, temperature: number) {
+    const isDouble = device.isDouble;
+    if (isDouble === null) {
+      this.log.warn('device seems to be initialized or disconnected. but setTemperature is called', device.name);
+      return Promise.resolve(); // do nothing
+    }
+
+    const temp = isDouble ? [temperature, temperature] as [number, number] : temperature;
+    return this.api.setTemperature(device, temp, device.functions.heatRange);
+  }
+
+  private _lock(device: NavienDevice, isLocked: boolean) {
+    return this.api.setChildLock(device, isLocked);
+  }
+
   public async activate(device: NavienDevice, isActive: boolean) {
     this.log.info('Setting active to', isActive, 'for device', device.name);
 
-    const success = await device.activate(isActive).then(() => true).catch((error) => {
+    const success = await this._activateDevice(device, isActive).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
         this.log.error(error.toString());
         return false;
@@ -91,7 +115,7 @@ export class NavienService {
   public async setTemperature(device: NavienDevice, temperature: number) {
     this.log.info('Setting temperature to', temperature, 'for device', device.name);
 
-    const success = await device.setTemperature(temperature).then(() => true).catch((error) => {
+    const success = await this._setTemperature(device, temperature).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
         this.log.error(error.toString());
         return false;
@@ -110,7 +134,7 @@ export class NavienService {
   public async lock(device: NavienDevice, isLocked: boolean) {
     this.log.info('Setting lock to', isLocked, 'for device', device.name);
 
-    const success = await device.lock(isLocked).then(() => true).catch((error) => {
+    const success = await this._lock(device, isLocked).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
         this.log.error(error.toString());
         return false;

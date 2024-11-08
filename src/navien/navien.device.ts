@@ -4,13 +4,15 @@ import { BehaviorSubject, Subscription } from 'rxjs';
 import { OperationMode } from '../aws/interfaces';
 import { AwsPubSub } from '../aws/pubsub';
 import { Device } from './interfaces';
-import { NavienApi } from './navien.api';
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface NavienDevice extends Device { }
 
 export class NavienDevice {
   private _isActive: boolean | null = null;
   private _temperature: number | null = null;
   private _isLocked: boolean | null = null;
-  private _isDouble: boolean | null = null;
+  public isDouble: boolean | null = null;
 
   private readonly isActiveSubject = new BehaviorSubject<boolean | null>(null);
   private readonly temperatureSubject = new BehaviorSubject<number | null>(null);
@@ -19,10 +21,11 @@ export class NavienDevice {
 
   constructor(
     private readonly log: Logger,
-    private readonly api: NavienApi,
     private readonly pubsub: AwsPubSub,
-    private readonly json: Device,
+    json: Device,
   ) {
+    Object.assign(this, json);
+
     // initialize event subscription
     this.subcription = this.pubsub.deviceStatusChanges(this.id).subscribe((event) => {
       this.log.debug('[AWS PubSub] device status changed:', JSON.stringify(event));
@@ -53,24 +56,20 @@ export class NavienDevice {
       this.isActive = isActive;
       this.temperature = temperature;
       this.isLocked = isLocked;
-      this._isDouble = 'left' in state.heater;
+      this.isDouble = 'left' in state.heater;
     });
   }
 
   get id() {
-    return this.json.deviceId;
-  }
-
-  get modelName() {
-    return this.json.modelName;
+    return this.deviceId;
   }
 
   get name() {
-    return this.json.Properties.nickName.mainItem;
+    return this.Properties.nickName.mainItem;
   }
 
   get functions() {
-    const { functions } = this.json.Properties.registry.attributes;
+    const { functions } = this.Properties.registry.attributes;
     const { heatControl } = functions;
 
     const step = parseFloat(heatControl.unit);
@@ -136,28 +135,6 @@ export class NavienDevice {
 
   get lockedChanges() {
     return this.isLockedSubject.asObservable();
-  }
-
-  initialize() {
-    return this.api.initializeDevice(this.json);
-  }
-
-  activate(isActive: boolean) {
-    return this.api.setOperationMode(this.json, isActive ? OperationMode.ON : OperationMode.OFF);
-  }
-
-  setTemperature(temperature: number) {
-    if (this._isDouble === null) {
-      this.log.warn('device seems to be initialized or disconnected. but setTemperature is called', this.name);
-      return Promise.resolve(); // do nothing
-    }
-
-    const temp = this._isDouble ? [temperature, temperature] as [number, number] : temperature;
-    return this.api.setTemperature(this.json, temp, this.functions.heatRange);
-  }
-
-  lock(isLocked: boolean) {
-    return this.api.setChildLock(this.json, isLocked);
   }
 
   dispose() {
