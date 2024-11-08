@@ -2,28 +2,20 @@ import { ConnectionState } from '@aws-amplify/pubsub';
 import { Logger } from 'homebridge';
 
 import { AwsPubSub } from '../aws/pubsub';
-import { NavienHomebridgePlatform } from '../platform';
 import { NavienException } from './exceptions';
 import { Device } from './interfaces';
 import { NavienApi } from './navien.api';
-import { NavienAuth } from './navien.auth';
 import { NavienDevice } from './navien.device';
 import { NavienSessionManager } from './navien.session-manager';
 
 export class NavienService {
-  private readonly api: NavienApi;
-  private readonly auth: NavienAuth;
-  private readonly sessionManager: NavienSessionManager;
   private pubsub?: AwsPubSub;
 
   constructor(
-    private readonly platform: NavienHomebridgePlatform,
     private readonly log: Logger,
-  ) {
-    this.auth = new NavienAuth(log);
-    this.sessionManager = new NavienSessionManager(log, this.auth, platform.createPersist(), platform.config);
-    this.api = new NavienApi(log, this.sessionManager);
-  }
+    private readonly sessionManager: NavienSessionManager,
+    private readonly api: NavienApi,
+  ) { }
 
   public async ready() {
     this.log.info('Ready to use Navien API');
