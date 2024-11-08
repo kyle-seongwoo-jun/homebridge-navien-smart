@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.0...v1.7.1) (2024-11-08)
+
+
+### Bug Fixes
+
+* **auth:** fix refreshing token is not working ([6181ff8](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/6181ff87d7248dfdb34c1a1886046b086145c6ac))
+
 ## [1.7.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.6.1...v1.7.0) (2024-11-06)
 
 
