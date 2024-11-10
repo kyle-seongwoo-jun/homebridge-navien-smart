@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 
+import { Logging } from 'homebridge';
+
 import { NavienException } from '../navien/exceptions';
 import { NavienAuth } from '../navien/navien.auth';
 
@@ -12,7 +14,7 @@ async function main() {
   const username = process.argv[2];
   const password = process.argv[3];
 
-  const auth = new NavienAuth(console);
+  const auth = new NavienAuth(console as unknown as Logging);
 
   const response = await auth.login(username, password);
   console.log('refreshToken:', response.refreshToken);
