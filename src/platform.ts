@@ -66,12 +66,12 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
   /**
    * This function is invoked when homebridge restores cached accessories from disk at startup.
-   * It should be used to setup event handlers for characteristics and update respective values.
+   * It should be used to set up event handlers for characteristics and update respective values.
    */
   configureAccessory(accessory: PlatformAccessory) {
     this.log.info('Loading accessory from cache:', accessory.displayName);
 
-    // add the restored accessory to the accessories cache so we can track if it has already been registered
+    // add the restored accessory to the accessories cache, so we can track if it has already been registered
     this.accessories.push(accessory as NavienPlatformAccessory);
   }
 
@@ -120,7 +120,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       // the accessory already exists
       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
-      // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
+      // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. e.g.:
       existingAccessory.context.device = device;
       this.api.updatePlatformAccessories([existingAccessory]);
 
@@ -128,7 +128,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       // this is imported from `platformAccessory.ts`
       new ElectricMat(this, existingAccessory);
 
-      // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
+      // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
       // remove platform accessories when no longer present
       // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
       // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);

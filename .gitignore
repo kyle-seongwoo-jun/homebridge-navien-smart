@@ -2,6 +2,7 @@
 dist
 
 # ------------- Defaults ------------- #
+.DS_Store
 
 # Logs
 logs
