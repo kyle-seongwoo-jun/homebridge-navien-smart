@@ -5,6 +5,8 @@
   "version": "1.7.2",
   "description": "Homebridge plugin to control Navien devices via Navien Smart",
   "license": "Apache-2.0",
+  "type": "module",
+  "homepage": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart.git"
@@ -13,8 +15,8 @@
     "url": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues"
   },
   "engines": {
-    "node": "^18.17.0 || ^20.9.0",
-    "homebridge": "^1.6.0"
+    "node": "^18.17.0 || ^20.9.0 || ^22.11.0",
+    "homebridge": "^1.8.0 || ^2.0.0-beta.0"
   },
   "main": "dist/index.js",
   "bin": {
@@ -58,8 +60,8 @@
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.45.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
-    "homebridge": "^1.6.0",
-    "homebridge-config-ui-x": "^4.57.1",
+    "homebridge": "^2.0.0-beta.0",
+    "homebridge-config-ui-x": "^4.62.0",
     "husky": "^9.0.11",
     "jest": "^29.7.0",
     "nodemon": "^2.0.22",
@@ -74,10 +76,21 @@
       "json",
       "ts"
     ],
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

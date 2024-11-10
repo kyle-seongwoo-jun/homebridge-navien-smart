@@ -1,10 +1,10 @@
-import { LoginResponse, TokenAuthInfo } from './interfaces';
+import { LoginResponse, TokenAuthInfo } from './interfaces/index.js';
 
 export class NavienSession {
   constructor(
-      readonly accessToken: string,
-      readonly refreshToken: string,
-      readonly expiresAt: number, // milliseconds
+    readonly accessToken: string,
+    readonly refreshToken: string,
+    readonly expiresAt: number, // milliseconds
   ) { }
 
   static from(

@@ -1,13 +1,13 @@
 import assert from 'assert';
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 
-import { AwsSession } from '../aws/aws.session';
-import { NavienPlatformConfig } from '../platform';
-import { Persist } from '../utils/persist.util';
-import { AuthException, ConfigurationException } from './exceptions';
-import { NavienAuth } from './navien.auth';
-import { NavienSession } from './navien.session';
-import { NavienUser } from './navien.user';
+import { AwsSession } from '../aws/aws.session.js';
+import { NavienPlatformConfig } from '../platform.js';
+import { Persist } from '../utils/persist.util.js';
+import { AuthException, ConfigurationException } from './exceptions/index.js';
+import { NavienAuth } from './navien.auth.js';
+import { NavienSession } from './navien.session.js';
+import { NavienUser } from './navien.user.js';
 
 /**
  * Manages authentication sessions for the Navien API and AWS IoT.
@@ -36,7 +36,7 @@ export class NavienSessionManager {
   private _user?: NavienUser;
 
   constructor(
-    private readonly log: Logger,
+    private readonly log: Logging,
     private readonly auth: NavienAuth,
     private readonly storage: Persist,
     private readonly config: NavienPlatformConfig,

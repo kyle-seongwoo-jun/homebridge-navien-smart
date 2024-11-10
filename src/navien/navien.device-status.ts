@@ -1,9 +1,9 @@
 import { Logger } from 'homebridge';
 import { BehaviorSubject, Subscription } from 'rxjs';
 
-import { OperationMode } from '../aws/interfaces';
-import { AwsPubSub } from '../aws/pubsub';
-import { NavienDevice } from './navien.device';
+import { OperationMode } from '../aws/interfaces/index.js';
+import { AwsPubSub } from '../aws/pubsub.js';
+import { NavienDevice } from './navien.device.js';
 
 
 export class NavienDeviceStatusRepository {

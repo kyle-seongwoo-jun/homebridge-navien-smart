@@ -1,18 +1,18 @@
 import assert from 'assert';
 import fetchCookie from 'fetch-cookie';
-import { Logger } from 'homebridge';
+import { Logging } from 'homebridge';
 import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
-import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
-import { ApiException, AuthException } from './exceptions';
-import { LoginResponse, RefreshTokenResponse, ResponseCode, TokenLoginResponse } from './interfaces';
+import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants.js';
+import { ApiException, AuthException } from './exceptions/index.js';
+import { LoginResponse, RefreshTokenResponse, ResponseCode, TokenLoginResponse } from './interfaces/index.js';
 
 const fetchWithCookies = fetchCookie(fetch);
 
 export class NavienAuth {
   constructor(
-    private readonly log: Logger,
+    private readonly log: Logging,
   ) { }
 
   async login(username: string, password: string): Promise<LoginResponse> {

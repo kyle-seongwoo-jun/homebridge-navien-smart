@@ -1,7 +1,9 @@
 /* eslint-disable no-console */
 
-import { NavienException } from '../navien/exceptions';
-import { NavienAuth } from '../navien/navien.auth';
+import { Logging } from 'homebridge';
+
+import { NavienException } from '../navien/exceptions/index.js';
+import { NavienAuth } from '../navien/navien.auth.js';
 
 if (process.argv.length < 4) {
   console.error('Usage: navien <username> <password>');
@@ -12,7 +14,7 @@ async function main() {
   const username = process.argv[2];
   const password = process.argv[3];
 
-  const auth = new NavienAuth(console);
+  const auth = new NavienAuth(console as unknown as Logging);
 
   const response = await auth.login(username, password);
   console.log('refreshToken:', response.refreshToken);

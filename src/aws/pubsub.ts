@@ -5,13 +5,14 @@ import { BehaviorSubject, filter, map, Observable } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 import WebSocket from 'ws';
 
-import { AwsSession } from './aws.session';
-import { AWS_IOT_ENDPOINT, AWS_IOT_REGION } from './constants';
-import { NavienDeviceEvent } from './interfaces';
+import { AwsSession } from './aws.session.js';
+import { AWS_IOT_ENDPOINT, AWS_IOT_REGION } from './constants.js';
+import { NavienDeviceEvent } from './interfaces/index.js';
 
 // this is required because of mqtt lib is designed for browser and it uses global.WebSocket
 // see https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/294
-global.WebSocket = WebSocket;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).WebSocket = WebSocket as any;
 
 export class AwsPubSub {
   private readonly _pubsub: PubSub;

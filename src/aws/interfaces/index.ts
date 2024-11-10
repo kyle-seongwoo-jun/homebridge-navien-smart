@@ -1,1 +1,1 @@
-export * from './device-event.inteface';
+export * from './device-event.inteface.js';

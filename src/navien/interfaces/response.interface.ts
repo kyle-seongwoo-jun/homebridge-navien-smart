@@ -1,5 +1,5 @@
-import { Device } from './device.interface';
-import { TokenAuthInfo, TokenLoginData } from './login.interface';
+import { Device } from './device.interface.js';
+import { TokenAuthInfo, TokenLoginData } from './login.interface.js';
 
 export interface LoginResponse {
     loginId: string;

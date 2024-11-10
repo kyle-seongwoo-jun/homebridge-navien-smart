@@ -1,9 +1,9 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
-import { NavienDevice } from '../navien/navien.device';
-import { NavienDeviceStatusRepository } from '../navien/navien.device-status';
-import { NavienService } from '../navien/navien.service';
-import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform';
+import { NavienDevice } from '../navien/navien.device.js';
+import { NavienDeviceStatusRepository } from '../navien/navien.device-status.js';
+import { NavienService } from '../navien/navien.service.js';
+import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform.js';
 
 export default class ElectricMat {
   private readonly heater?: Service;
