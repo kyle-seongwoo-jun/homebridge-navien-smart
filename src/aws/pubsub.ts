@@ -12,7 +12,7 @@ import { NavienDeviceEvent } from './interfaces/index.js';
 // this is required because of mqtt lib is designed for browser and it uses global.WebSocket
 // see https://github.com/awslabs/aws-mobile-appsync-sdk-js/issues/294
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-(global as any).WebSocket = WebSocket as any;
+global.WebSocket = WebSocket as any;
 
 export class AwsPubSub {
   private readonly _pubsub: PubSub;

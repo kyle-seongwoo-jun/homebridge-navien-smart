@@ -32,7 +32,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "prepublishOnly": "npm run lint && npm run build",
     "prepare": "husky",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "postinstall": "patch-package"
   },
   "keywords": [
     "homebridge-plugin"
@@ -43,6 +44,7 @@
     "fetch-cookie": "^2.1.0",
     "node-fetch": "^2.7.0",
     "node-persist": "^4.0.1",
+    "patch-package": "^8.0.0",
     "rxjs": "^7.8.1",
     "uuid": "^9.0.1",
     "ws": "^8.16.0"
