@@ -1,3 +1,3 @@
-export * from './device.interface';
-export * from './login.interface';
-export * from './response.interface';
+export * from './device.interface.js';
+export * from './login.interface.js';
+export * from './response.interface.js';

@@ -1,13 +1,13 @@
-import { AwsAuthInfo } from '../navien/interfaces';
+import { AwsAuthInfo } from '../navien/interfaces/index.js';
 
 export class AwsSession {
   private readonly expiresAt: number; // milliseconds
 
   constructor(
-      readonly accessKeyId: string,
-      readonly secretAccessKey: string,
-      readonly sessionToken: string,
-      expiresIn: number, // milliseconds
+    readonly accessKeyId: string,
+    readonly secretAccessKey: string,
+    readonly sessionToken: string,
+    expiresIn: number, // milliseconds
   ) {
     this.expiresAt = (Date.now() + expiresIn);
   }

@@ -2,14 +2,14 @@ import { ConnectionState } from '@aws-amplify/pubsub';
 import assert from 'assert';
 import { Logging } from 'homebridge';
 
-import { OperationMode } from '../aws/interfaces';
-import { AwsPubSub } from '../aws/pubsub';
-import { NavienException } from './exceptions';
-import { Device } from './interfaces';
-import { NavienApi } from './navien.api';
-import { NavienDevice } from './navien.device';
-import { NavienDeviceStatusRepository } from './navien.device-status';
-import { NavienSessionManager } from './navien.session-manager';
+import { OperationMode } from '../aws/interfaces/index.js';
+import { AwsPubSub } from '../aws/pubsub.js';
+import { NavienException } from './exceptions/index.js';
+import { Device } from './interfaces/index.js';
+import { NavienApi } from './navien.api.js';
+import { NavienDevice } from './navien.device.js';
+import { NavienDeviceStatusRepository } from './navien.device-status.js';
+import { NavienSessionManager } from './navien.session-manager.js';
 
 export class NavienService {
   private pubsub?: AwsPubSub;

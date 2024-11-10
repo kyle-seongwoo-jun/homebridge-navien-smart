@@ -4,9 +4,9 @@ import { Logging } from 'homebridge';
 import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 
-import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants';
-import { ApiException, AuthException } from './exceptions';
-import { LoginResponse, RefreshTokenResponse, ResponseCode, TokenLoginResponse } from './interfaces';
+import { API_URL, LOGIN_API_URL, USER_AGENT } from './constants.js';
+import { ApiException, AuthException } from './exceptions/index.js';
+import { LoginResponse, RefreshTokenResponse, ResponseCode, TokenLoginResponse } from './interfaces/index.js';
 
 const fetchWithCookies = fetchCookie(fetch);
 

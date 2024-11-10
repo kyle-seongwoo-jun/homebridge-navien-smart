@@ -2,8 +2,8 @@
 
 import { Logging } from 'homebridge';
 
-import { NavienException } from '../navien/exceptions';
-import { NavienAuth } from '../navien/navien.auth';
+import { NavienException } from '../navien/exceptions/index.js';
+import { NavienAuth } from '../navien/navien.auth.js';
 
 if (process.argv.length < 4) {
   console.error('Usage: navien <username> <password>');

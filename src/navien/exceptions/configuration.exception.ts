@@ -1,4 +1,4 @@
-import { NavienException } from './navien.exception';
+import { NavienException } from './navien.exception.js';
 
 export class ConfigurationException extends NavienException {
   constructor(

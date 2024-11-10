@@ -1,5 +1,5 @@
-import { NavienResponse } from '../interfaces';
-import { NavienException } from './navien.exception';
+import { NavienResponse } from '../interfaces/index.js';
+import { NavienException } from './navien.exception.js';
 
 export class ApiException<T> extends NavienException {
   constructor(

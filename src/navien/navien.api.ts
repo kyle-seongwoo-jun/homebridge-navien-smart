@@ -2,13 +2,13 @@ import assert from 'assert';
 import { Logging } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
-import { DoubleHeaterState, HeaterItemState, HeaterState, OperationMode, SingleHeaterState } from '../aws/interfaces';
-import { API_URL } from './constants';
-import { ApiException } from './exceptions';
-import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces';
-import { NavienSession } from './navien.session';
-import { NavienSessionManager } from './navien.session-manager';
-import { NavienUser } from './navien.user';
+import { DoubleHeaterState, HeaterItemState, HeaterState, OperationMode, SingleHeaterState } from '../aws/interfaces/index.js';
+import { API_URL } from './constants.js';
+import { ApiException } from './exceptions/api.exception.js';
+import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces/index.js';
+import { NavienSession } from './navien.session.js';
+import { NavienSessionManager } from './navien.session-manager.js';
+import { NavienUser } from './navien.user.js';
 
 type RequestMethods = 'GET' | 'POST';
 

@@ -1,15 +1,15 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 import path from 'path';
 
-import ElectricMat from './homebridge/electric-mat.device';
-import { NavienException } from './navien/exceptions';
-import { NavienApi } from './navien/navien.api';
-import { NavienAuth } from './navien/navien.auth';
-import { NavienDevice } from './navien/navien.device';
-import { NavienService } from './navien/navien.service';
-import { NavienSessionManager } from './navien/navien.session-manager';
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { Persist } from './utils/persist.util';
+import ElectricMat from './homebridge/electric-mat.device.js';
+import { NavienException } from './navien/exceptions/index.js';
+import { NavienApi } from './navien/navien.api.js';
+import { NavienAuth } from './navien/navien.auth.js';
+import { NavienDevice } from './navien/navien.device.js';
+import { NavienService } from './navien/navien.service.js';
+import { NavienSessionManager } from './navien/navien.session-manager.js';
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
+import { Persist } from './utils/persist.util.js';
 
 type NavienDeviceContext = { device: NavienDevice };
 export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
@@ -28,8 +28,8 @@ export type NavienPlatformConfig = PlatformConfig & {
  * parse the user config and discover/register accessories with Homebridge.
  */
 export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
-  public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
 
   // this is used to track restored cached accessories
   public readonly accessories: NavienPlatformAccessory[] = [];
@@ -42,6 +42,9 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     config: PlatformConfig,
     public readonly api: API,
   ) {
+    this.Service = api.hap.Service;
+    this.Characteristic = api.hap.Characteristic;
+
     this.log.info('Finished initializing platform:', config.platform);
 
     // Homebridge 1.8.0 introduced a `log.success` method that can be used to log success messages

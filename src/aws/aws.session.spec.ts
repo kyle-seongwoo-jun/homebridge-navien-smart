@@ -1,4 +1,4 @@
-import { AwsSession } from './aws.session';
+import { AwsSession } from './aws.session.js';
 
 describe('AwsSession', () => {
   it('should create instance', () => {
