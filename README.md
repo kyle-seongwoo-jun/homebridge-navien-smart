@@ -1,3 +1,7 @@
+[![npm-version](https://badgen.net/npm/v/homebridge-navien-smart)](https://www.npmjs.com/package/homebridge-navien-smart)
+[![npm-total-downloads](https://badgen.net/npm/dt/homebridge-navien-smart)](https://www.npmjs.com/package/homebridge-navien-smart)
+[![ci-status](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/actions/workflows/build.yml/badge.svg)](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/actions/workflows/build.yml)
+
 <p align="center">
 
 <img src="https://github.com/homebridge/branding/raw/latest/logos/homebridge-gradient-named.png" width="150">
