@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
 import { Device } from './interfaces/index.js';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface NavienDevice extends Device { }
 
 export class NavienDevice {
