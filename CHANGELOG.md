@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.3](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.2...v1.7.3) (2024-11-11)
+
+
+### Bug Fixes
+
+* paho is not working with esm, so added a patch ([5d1aaf0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/5d1aaf0c8a44c3b884335ff9ef76754e76df2b18))
+* remove cache accessories that wasn't discovered ([567674f](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/567674f2274263e95056fa8ad824c901d686c141))
+* support homebridge 2.0 ([810d12a](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/810d12aa9c7db9fe9319c50c1c3e18cb56606ab8))
+
 ## [1.7.2](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.1...v1.7.2) (2024-11-08)
 
 
