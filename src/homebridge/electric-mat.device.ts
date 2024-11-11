@@ -228,7 +228,6 @@ export default class ElectricMat {
     return thermostat;
   }
 
-
   private async getActive(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;

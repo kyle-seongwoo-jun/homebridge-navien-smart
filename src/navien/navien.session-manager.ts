@@ -54,7 +54,6 @@ export class NavienSessionManager {
     return this._user;
   }
 
-
   /**
    * Initializes the session manager by:
    * 1. Loading session from storage or config.json

@@ -5,7 +5,6 @@ import { OperationMode } from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
 import { NavienDevice } from './navien.device.js';
 
-
 export class NavienDeviceStatusRepository {
   private _isActive: boolean | null = null;
   private _temperature: number | null = null;

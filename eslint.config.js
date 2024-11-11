@@ -82,6 +82,7 @@ export default [
           ignoreEOLComments: true,
         },
       ],
+      "@stylistic/no-multiple-empty-lines": ["warn", { max: 1 }],
       "@stylistic/no-trailing-spaces": ["warn"],
       "@stylistic/object-curly-spacing": ["warn", "always"],
       "@stylistic/lines-between-class-members": [

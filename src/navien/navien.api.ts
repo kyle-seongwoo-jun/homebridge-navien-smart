@@ -148,7 +148,6 @@ export class NavienApi {
     }
   }
 
-
   public initializeDevice(device: Device) {
     return this.controlDevice(device);
   }
