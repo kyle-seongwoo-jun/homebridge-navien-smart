@@ -32,7 +32,8 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Characteristic: typeof Characteristic;
 
   // this is used to track restored cached accessories
-  public readonly accessories: NavienPlatformAccessory[] = [];
+  public readonly accessories: Map<string, NavienPlatformAccessory> = new Map();
+  public readonly discoveredCacheUUIDs: string[] = [];
 
   public readonly config: NavienPlatformConfig;
   public readonly navienService: NavienService;
@@ -72,7 +73,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     this.log.info('Loading accessory from cache:', accessory.displayName);
 
     // add the restored accessory to the accessories cache, so we can track if it has already been registered
-    this.accessories.push(accessory as NavienPlatformAccessory);
+    this.accessories.set(accessory.UUID, accessory as NavienPlatformAccessory);
   }
 
   /**
@@ -104,6 +105,16 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     for (const device of devices) {
       this._registerDeviceAsAccessory(device);
     }
+
+    // you can also deal with accessories from the cache which are no longer present by removing them from Homebridge
+    // for example, if your plugin logs into a cloud account to retrieve a device list, and a user has previously removed a device
+    // from this cloud account, then this device will no longer be present in the device list but will still be in the Homebridge cache
+    for (const [uuid, accessory] of this.accessories) {
+      if (!this.discoveredCacheUUIDs.includes(uuid)) {
+        this.log.info('Removing existing accessory from cache:', accessory.displayName);
+        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+      }
+    }
   }
 
   private _registerDeviceAsAccessory(device: NavienDevice) {
@@ -114,7 +125,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
     // see if an accessory with the same uuid has already been registered and restored from
     // the cached devices we stored in the `configureAccessory` method above
-    const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+    const existingAccessory = this.accessories.get(uuid);
 
     if (existingAccessory) {
       // the accessory already exists
@@ -150,6 +161,9 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       // link the accessory to your platform
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
+
+    // push into discoveredCacheUUIDs
+    this.discoveredCacheUUIDs.push(uuid);
   }
 
   /**
