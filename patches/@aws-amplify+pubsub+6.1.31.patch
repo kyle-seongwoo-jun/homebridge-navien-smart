@@ -1,15 +1,16 @@
 diff --git a/node_modules/@aws-amplify/pubsub/dist/esm/Providers/MqttOverWS.mjs b/node_modules/@aws-amplify/pubsub/dist/esm/Providers/MqttOverWS.mjs
-index 0e2ac29..da672b8 100644
+index 2578bc9..4b9aa03 100644
 --- a/node_modules/@aws-amplify/pubsub/dist/esm/Providers/MqttOverWS.mjs
 +++ b/node_modules/@aws-amplify/pubsub/dist/esm/Providers/MqttOverWS.mjs
-@@ -1,4 +1,4 @@
+@@ -2,12 +2,16 @@ import { Observable } from 'rxjs';
+ import { ConsoleLogger, Hub } from '@aws-amplify/core';
+ import { amplifyUuid, AMPLIFY_SYMBOL } from '@aws-amplify/core/internals/utils';
+ import { ConnectionState } from '../types/PubSub.mjs';
 -import * as Paho from '../vendor/paho-mqtt.js';
 +// import * as Paho from '../vendor/paho-mqtt.js';
- import { Observable } from 'rxjs';
- import { AbstractPubSub } from './PubSub.mjs';
- import { ConnectionState } from '../types/PubSub.mjs';
-@@ -8,6 +8,10 @@ import { ConnectionStateMonitor, CONNECTION_CHANGE } from '../utils/ConnectionSt
+ import { ConnectionStateMonitor, CONNECTION_CHANGE } from '../utils/ConnectionStateMonitor.mjs';
  import { ReconnectionMonitor, ReconnectEvent } from '../utils/ReconnectionMonitor.mjs';
+ import { AbstractPubSub } from './PubSub.mjs';
  import { CONNECTION_STATE_CHANGE } from './constants.mjs';
  
 +import { createRequire } from 'module';
@@ -18,4 +19,4 @@ index 0e2ac29..da672b8 100644
 +
  // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  // SPDX-License-Identifier: Apache-2.0
- // @ts-ignore
+ const logger = new ConsoleLogger('MqttOverWS');
