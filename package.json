@@ -25,6 +25,7 @@
   "scripts": {
     "lint": "eslint --max-warnings=0 --fix",
     "watch": "npm run build && npm link && nodemon",
+    "prebuild": "node -p \"\\`export const PLUGIN_VERSION = '\\${require('./package.json').version}';\\`\" > src/version.ts",
     "build": "rimraf ./dist && tsc",
     "test": "jest",
     "test:watch": "jest --watch",

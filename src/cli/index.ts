@@ -4,6 +4,9 @@ import { Logging } from 'homebridge';
 
 import { NavienException } from '../navien/exceptions/index.js';
 import { NavienAuth } from '../navien/navien.auth.js';
+import { PLUGIN_VERSION } from '../version.js';
+
+console.log(`Navien CLI: ${PLUGIN_VERSION}`);
 
 if (process.argv.length < 4) {
   console.error('Usage: navien <username> <password>');
