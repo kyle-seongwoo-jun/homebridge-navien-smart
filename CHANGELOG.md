@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.4](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.3...v1.7.4) (2024-11-12)
+
+
+### Bug Fixes
+
+* update bin for esm ([fa22b2f](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/fa22b2ff94b7f80b8320df0be48a99b3665d9495))
+
 ## [1.7.3](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.2...v1.7.3) (2024-11-11)
 
 
