@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.5](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.4...v1.7.5) (2024-11-12)
+
+
+### Bug Fixes
+
+* add missing updates for lock file ([f9892f7](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/f9892f713b582268ec93ae307e79a57e06ff32ca))
+
 ## [1.7.4](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.3...v1.7.4) (2024-11-12)
 
 
