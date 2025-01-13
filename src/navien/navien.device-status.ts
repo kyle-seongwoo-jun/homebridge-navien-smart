@@ -1,7 +1,7 @@
 import { Logger } from 'homebridge';
 import { BehaviorSubject, Subscription } from 'rxjs';
 
-import { OperationMode } from '../aws/interfaces/index.js';
+import { DoubleHeaterState, OperationMode, SingleHeaterState } from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
 import { NavienDevice } from './navien.device.js';
 
@@ -36,21 +36,35 @@ export class NavienDeviceStatusRepository {
       }
 
       // status update
-      const isActive = state.operationMode === OperationMode.ON;
-      const temperature = ('left' in state.heater ?
-        state.heater.left : // TODO: handle left and right
-        state.heater.single
-      ).temperature.set;
-      const doubleTemperature = 'left' in state.heater ?
-        { left: state.heater.left.temperature.set, right: state.heater.right.temperature.set } :
-        temperature;
-      const isLocked = state.childLock;
-      this.log.info('[AWS PubSub] current status:', { name: this.device.name, isActive, temperature: doubleTemperature, isLocked });
+      if ('heater' in state) {
+        const heater = state.heater!;
+        if ('left' in heater || 'right' in heater) {
+          this._isDouble = true;
+        }
+        if ('single' in heater) {
+          this._isDouble = false;
+        }
+        const temperature = (this._isDouble ?
+          // TODO: handle left and right
+          (heater as DoubleHeaterState)?.left:
+          (heater as SingleHeaterState)?.single
+        )?.temperature?.set;
+        if (temperature !== undefined) {
+          this.temperature = temperature;
+        }
+      }
+      if ('childLock' in state) {
+        this.isLocked = state.childLock!;
+      }
+      if ('operationMode' in state) {
+        this.isActive = (state.operationMode === OperationMode.ON);
+      }
 
-      this.isActive = isActive;
-      this.temperature = temperature;
-      this.isLocked = isLocked;
-      this._isDouble = 'left' in state.heater;
+      // updated status
+      this.log.info(
+        '[AWS PubSub] current status:',
+        { name: this.device.name, isActive: this.isActive, temperature: this.temperature, isLocked: this.isLocked },
+      );
     });
   }
 
