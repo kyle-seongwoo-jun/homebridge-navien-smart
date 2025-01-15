@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.6](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.5...v1.7.6) (2025-01-15)
+
+
+### Bug Fixes
+
+* handle missing fields from device event ([a2dec31](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/a2dec313a1de2adc547016893fd3bc8549329426))
+
 ## [1.7.5](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.4...v1.7.5) (2024-11-12)
 
 
