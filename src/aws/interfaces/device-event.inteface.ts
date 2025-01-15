@@ -36,11 +36,11 @@ export interface NavienDesiredState {
 export interface NavienReportedState {
     info: DeviceInfo;
     connected: boolean;
-    errorCode: number;
-    operationMode: OperationMode;
-    heater: HeaterState;
-    childLock: boolean;
-    schedule: ScheduleState;
+    errorCode?: number;
+    operationMode?: OperationMode;
+    heater?: HeaterState;
+    childLock?: boolean;
+    schedule?: ScheduleState;
 }
 
 export enum OperationMode {
@@ -51,16 +51,16 @@ export enum OperationMode {
 export type HeaterState = SingleHeaterState | DoubleHeaterState;
 
 export interface SingleHeaterState {
-    single: HeaterItemState;
+    single?: HeaterItemState;
 }
 
 export interface DoubleHeaterState {
-    left: HeaterItemState;
-    right: HeaterItemState;
+    left?: HeaterItemState;
+    right?: HeaterItemState;
 }
 
 export interface HeaterItemState {
-    enable: boolean;
+    enable?: boolean;
     temperature: {
         set: number; // celcius
     };
