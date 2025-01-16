@@ -1,7 +1,7 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 import path from 'path';
 
-import ElectricMat from './homebridge/electric-mat.device.js';
+import { ElectricMatDouble, ElectricMatSingle } from './homebridge/electric-mat.device.js';
 import { NavienException } from './navien/exceptions/index.js';
 import { NavienApi } from './navien/navien.api.js';
 import { NavienAuth } from './navien/navien.auth.js';
@@ -13,6 +13,13 @@ import { Persist } from './utils/persist.util.js';
 
 type NavienDeviceContext = { device: NavienDevice };
 export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
+
+export type DisplayName = {
+  device: string;
+  mainSwitch?: string;
+  left?: string;
+  right?: string;
+};
 export type NavienPlatformConfig = PlatformConfig & {
   authMode: 'account' | 'token';
   username: string;
@@ -20,6 +27,8 @@ export type NavienPlatformConfig = PlatformConfig & {
   refreshToken?: string;
   accountSeq?: number;
   accessoryType: 'HeaterCooler' | 'Thermostat';
+  separateControl: boolean;
+  displayName: DisplayName[];
 };
 
 /**
@@ -137,7 +146,11 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the restored accessory
       // this is imported from `platformAccessory.ts`
-      new ElectricMat(this, existingAccessory);
+      if (device.isDouble && this.config.separateControl) {
+        new ElectricMatDouble(this, existingAccessory);
+      } else {
+        new ElectricMatSingle(this, existingAccessory);
+      }
 
       // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
       // remove platform accessories when no longer present
@@ -156,7 +169,11 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the newly create accessory
       // this is imported from `platformAccessory.ts`
-      new ElectricMat(this, accessory);
+      if (device.isDouble && this.config.separateControl) {
+        new ElectricMatDouble(this, accessory);
+      } else {
+        new ElectricMatSingle(this, accessory);
+      }
 
       // link the accessory to your platform
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
