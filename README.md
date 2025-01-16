@@ -44,6 +44,7 @@ npm i -g homebridge-navien-smart
     "username": "<navien-smart-username>",
     "password": "<navien-smart-password>",
     "accessoryType": "HeaterCooler",
+    "soundEnabled": false
     "separateControl": true,
     "displayName": [
         {
@@ -64,6 +65,7 @@ npm i -g homebridge-navien-smart
     "refreshToken": "<navien-api-refresh-token>",
     "accountSeq": 12345678,
     "accessoryType": "HeaterCooler",
+    "soundEnabled": true
     "separateControl": false,
     "platform": "NavienSmart"
 }
@@ -77,7 +79,8 @@ npm i -g homebridge-navien-smart
 | `refreshToken` | Required if `authMode` = `token`. You can get it with `navien` cli. |
 | `accountSeq` | Required if `authMode` = `token`. You can get it with `navien` cli. |
 | `accessoryType` | Required. You can choose between `HeaterCooler` and `Thermostat` |
-| `separateControl` | If selected, support left and right separation heating (only for supported devices). |
+| `soundEnabled` | If selected, enable the notification sound on operation(only for supported devices). |
+| `separateControl` | If selected, support left and right separated heating(only for supported devices). |
 | `displayName` | Set name appears in Home. `device` must be set to the same as the device name in Navien Smart app. |
 | `platform` | value always `NavienSmart` |
 

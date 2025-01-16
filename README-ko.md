@@ -40,6 +40,7 @@ npm i -g homebridge-navien-smart
     "username": "<navien-smart-username>",
     "password": "<navien-smart-password>",
     "accessoryType": "HeaterCooler",
+    "soundEnabled": false
     "separateControl": true,
     "displayName": [
         {
@@ -60,6 +61,7 @@ npm i -g homebridge-navien-smart
     "refreshToken": "<navien-api-refresh-token>",
     "accountSeq": 12345678,
     "accessoryType": "HeaterCooler",
+    "soundEnabled": true
     "separateControl": false,
     "platform": "NavienSmart"
 }
@@ -73,6 +75,7 @@ npm i -g homebridge-navien-smart
 | `refreshToken` | `authMode`가 `token`인 경우 필수. `navien` CLI로 얻을 수 있습니다. |
 | `accountSeq` | `authMode`가 `token`인 경우 필수. `navien` CLI로 얻을 수 있습니다. |
 | `accessoryType` | 필수. `HeaterCooler`와 `Thermostat` 중 하나를 선택할 수 있습니다. |
+| `soundEnabled` | 선택한 경우 조작시 알림소리를 활성화합니다(지원하는 기기에 한함). |
 | `separateControl` | 선택한 경우 좌우 분리난방을 지원합니다(지원하는 기기에 한함). |
 | `displayName` | 홈에서 표시되는 이름을 설정합니다. `device` Navien Smart 앱에서 등록된 기기 이름과 동일한 값으로 설정해야 합니다. |
 | `platform` | 항상 `NavienSmart` |

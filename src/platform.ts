@@ -27,6 +27,7 @@ export type NavienPlatformConfig = PlatformConfig & {
   refreshToken?: string;
   accountSeq?: number;
   accessoryType: 'HeaterCooler' | 'Thermostat';
+  soundEnabled: boolean;
   separateControl: boolean;
   displayName: DisplayName[];
 };
@@ -68,7 +69,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     // initialize navien services
     const auth = new NavienAuth(log);
     const sessionManager = new NavienSessionManager(log, auth, this._createPersist(), this.config);
-    const httpApi = new NavienApi(log, sessionManager);
+    const httpApi = new NavienApi(log, sessionManager, this.config.soundEnabled);
     this.navienService = new NavienService(log, sessionManager, httpApi);
 
     this.api.on('didFinishLaunching', this.onLaunched.bind(this));

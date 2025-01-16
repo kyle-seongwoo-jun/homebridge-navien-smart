@@ -62,6 +62,11 @@
         ],
         "required": true
       },
+      "soundEnabled": {
+        "title": "Enable Sound on Operation",
+        "type": "boolean",
+        "default": false
+      },
       "separateControl": {
         "title": "Separate Control",
         "type": "boolean",

@@ -13,9 +13,11 @@ import { NavienUser } from './navien.user.js';
 type RequestMethods = 'GET' | 'POST';
 
 export class NavienApi {
+
   constructor(
     private readonly log: Logging,
     private readonly sessionManager: NavienSessionManager,
+    private readonly soundEnabled: boolean,
   ) { }
 
   private get session(): NavienSession | undefined {
@@ -135,6 +137,7 @@ export class NavienApi {
               event: {
                 modelCode: parseInt(modelCode),
               },
+              beep: this.soundEnabled,
               ...payload,
             },
           },
