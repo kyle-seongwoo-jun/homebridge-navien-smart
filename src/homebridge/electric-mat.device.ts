@@ -44,6 +44,10 @@ abstract class ElectricMat {
     return this.platform.log;
   }
 
+  /**
+   * Initialize HeaterCooler service characteristics both required for Single and Double
+   * @param heater HeaterCooler service to initialize
+   */
   protected initializeHeaterBase(heater: Service) {
     const {
       Characteristic: {
@@ -83,6 +87,10 @@ abstract class ElectricMat {
       .onSet(this.setLocked.bind(this));
   }
 
+  /**
+   * Initialize Thermostat service characteristics both required for Single and Double
+   * @param thermostat Thermostat service to initialize
+   */
   protected initializeThermostatBase(thermostat: Service) {
     const {
       Characteristic: {
@@ -128,6 +136,12 @@ abstract class ElectricMat {
       });
   }
 
+  /**
+   * Get current temperature.
+   * For Single, it returns the current temperature of the device.
+   * For Double, it returns the current temperature of the left side.
+   * @returns current temperature
+   */
   protected async getTemperatureCurrent(): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, temperatureCurrent } = this.deviceStatus;
@@ -142,6 +156,11 @@ abstract class ElectricMat {
     return temperatureCurrent;
   }
 
+  /**
+   * Get current temperature.
+   * Only used for Double, it returns the current temperature of the right side.
+   * @returns current temperature of the right side
+   */
   protected async getTemperatureCurrentRight(): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, temperatureCurrentRight } = this.deviceStatus;
@@ -156,6 +175,7 @@ abstract class ElectricMat {
     return temperatureCurrentRight;
   }
 
+  // Only used for HeaterCooler Service
   private async getLocked(): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, isLocked } = this.deviceStatus;
@@ -170,6 +190,7 @@ abstract class ElectricMat {
     return isLocked;
   }
 
+  // Only used for HeaterCooler Service
   private async setLocked(value: CharacteristicValue) {
     const isLocked = !!value;
 
@@ -242,7 +263,6 @@ export class ElectricMatSingle extends ElectricMat {
       .onGet(this.getTemperatureSet.bind(this))
       .onSet(this.setTemperatureSet.bind(this));
 
-    // subscribe to device events
     const getCurrentHeaterState = (isPowerOn: boolean, isIdle: boolean) => {
       return isPowerOn ?
         isIdle ?
@@ -251,17 +271,20 @@ export class ElectricMatSingle extends ElectricMat {
         CurrentHeaterCoolerState.INACTIVE;
     };
 
+    // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
       heater.updateCharacteristic(Active, isPowerOn ? Active.ACTIVE : Active.INACTIVE);
     });
     this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
       const { isPowerOn, isIdle } = this.deviceStatus;
       heater.updateCharacteristic(CurrentTemperature, temperatureCurrent);
+      // We may need to update CurrentHeaterCoolerState since isIdle may have changed
       heater.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn, isIdle));
     });
     this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
       const { isPowerOn, isIdle } = this.deviceStatus;
       heater.updateCharacteristic(HeatingThresholdTemperature, temperatureSet);
+      // We may need to update CurrentHeaterCoolerState since isIdle may have changed
       heater.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn, isIdle));
     });
     this.deviceStatus.lockedChanges.subscribe((isLocked: boolean) => {
@@ -331,6 +354,7 @@ export class ElectricMatSingle extends ElectricMat {
     return thermostat;
   }
 
+  // Only used for HeaterCooler Service
   private async getActive(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
@@ -346,6 +370,7 @@ export class ElectricMatSingle extends ElectricMat {
     return isPowerOn ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
   }
 
+  // Only used for HeaterCooler Service
   private async setActive(value: CharacteristicValue) {
     const state = value as number;
     const isPowerOn = !!state;
@@ -355,6 +380,7 @@ export class ElectricMatSingle extends ElectricMat {
     await this.service.activate(this.device, isPowerOn);
   }
 
+  // Only used for HeaterCooler Service
   private async getHeaterState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
@@ -379,6 +405,7 @@ export class ElectricMatSingle extends ElectricMat {
     return state[0];
   }
 
+  // Only used for Thermostat Service
   private async getHeatingState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
@@ -394,6 +421,7 @@ export class ElectricMatSingle extends ElectricMat {
     return isPowerOn ? Characteristic.CurrentHeatingCoolingState.HEAT : Characteristic.CurrentHeatingCoolingState.OFF;
   }
 
+  // Only used for Thermostat Service
   private async setHeatingState(value: CharacteristicValue) {
     const state = value as number;
     const isPowerOn = !!state;
@@ -478,6 +506,7 @@ export class ElectricMatDouble extends ElectricMat {
       .onGet(this.getPowerOn.bind(this))
       .onSet(this.setPowerOn.bind(this));
 
+    // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
       mainSwitch.updateCharacteristic(On, isPowerOn);
     });
@@ -500,12 +529,12 @@ export class ElectricMatDouble extends ElectricMat {
       },
     } = this.platform;
 
-    const serviceNameLeft = this.device.id + 'HEATERLEFT';
-    const serviceNameRight = this.device.id + 'HEATERRIGHT';
+    const serviceNameLeft = this.device.name + ' LEFT';
+    const serviceNameRight = this.device.name + ' RIGHT';
     const heaterLeft = this.accessory.getService(serviceNameLeft)
-      || this.accessory.addService(HeaterCooler, serviceNameLeft, 'HEATERLEFT');
+      || this.accessory.addService(HeaterCooler, serviceNameLeft, 'LEFT');
     const heaterRight = this.accessory.getService(serviceNameRight)
-      || this.accessory.addService(HeaterCooler, serviceNameRight, 'HEATERRIGHT');
+      || this.accessory.addService(HeaterCooler, serviceNameRight, 'RIGHT');
 
     // name
     const nameLeft = this.displayName?.left || this.device.name + ' Left';
@@ -546,7 +575,6 @@ export class ElectricMatDouble extends ElectricMat {
       .onGet(this.getTemperatureSetRight.bind(this))
       .onSet(this.setTemperatureSetRight.bind(this));
 
-    // subscribe to device events
     const getCurrentHeaterState = (isZoneEnabled: boolean, isZoneIdle: boolean) => {
       return isZoneEnabled ?
         isZoneIdle ?
@@ -555,10 +583,12 @@ export class ElectricMatDouble extends ElectricMat {
         CurrentHeaterCoolerState.INACTIVE;
     };
 
+    // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
       const { isLeftEnabled, isRightEnabled, isIdle, isRightIdle } = this.deviceStatus;
       const isLeftRunning = isPowerOn && isLeftEnabled;
       const isRightRunning = isPowerOn && isRightEnabled;
+
       heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
       heaterRight.updateCharacteristic(Active, isRightRunning ? Active.ACTIVE : Active.INACTIVE);
       heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isLeftRunning, isIdle));
@@ -566,37 +596,45 @@ export class ElectricMatDouble extends ElectricMat {
     });
 
     this.deviceStatus.isLeftEnabledChanges.subscribe((isLeftEnabled: boolean) => {
-      const { isIdle } = this.deviceStatus;
-      /* At this point, power should be ON */
-      heaterLeft.updateCharacteristic(Active, isLeftEnabled ? Active.ACTIVE : Active.INACTIVE);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isLeftEnabled, isIdle));
+      const { isPowerOn, isIdle } = this.deviceStatus;
+      const isLeftRunning = isPowerOn && isLeftEnabled;
+
+      heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isLeftRunning, isIdle));
     });
     this.deviceStatus.isRightEnabledChanges.subscribe((isRightEnabled: boolean) => {
-      const { isRightIdle } = this.deviceStatus;
-      /* At this point, power should be ON */
-      heaterRight.updateCharacteristic(Active, isRightEnabled ? Active.ACTIVE : Active.INACTIVE);
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isRightEnabled, isRightIdle));
+      const { isPowerOn, isRightIdle } = this.deviceStatus;
+      const isRightRunning = isPowerOn && isRightEnabled;
+
+      heaterRight.updateCharacteristic(Active, isRightRunning ? Active.ACTIVE : Active.INACTIVE);
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isRightRunning, isRightIdle));
     });
 
     this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
       const { isPowerOn, isLeftEnabled, isIdle } = this.deviceStatus;
+
       heaterLeft.updateCharacteristic(CurrentTemperature, temperatureCurrent);
       heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isLeftEnabled, isIdle));
     });
     this.deviceStatus.temperatureCurrentRightChanges.subscribe((temperatureRightCurrent: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
+
       heaterRight.updateCharacteristic(CurrentTemperature, temperatureRightCurrent);
       heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
     });
 
     this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
       const { isPowerOn, isLeftEnabled, isIdle } = this.deviceStatus;
+
       heaterLeft.updateCharacteristic(HeatingThresholdTemperature, temperatureSet);
+      // We may need to update CurrentHeaterCoolerState since isIdle may have changed
       heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isLeftEnabled, isIdle));
     });
     this.deviceStatus.temperatureSetRightChanges.subscribe((temperatureRightSet: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
+
       heaterRight.updateCharacteristic(HeatingThresholdTemperature, temperatureRightSet);
+      // We may need to update CurrentHeaterCoolerState since isRightIdle may have changed
       heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
     });
 
@@ -621,12 +659,12 @@ export class ElectricMatDouble extends ElectricMat {
         Thermostat,
       },
     } = this.platform;
-    const serviceNameLeft = this.device.id + 'THERMOSTATLEFT';
-    const serviceNameRight = this.device.id + 'THERMOSTATRIGHT';
+    const serviceNameLeft = this.device.name + ' Left';
+    const serviceNameRight = this.device.name + ' Right';
     const thermostatLeft = this.accessory.getService(serviceNameLeft)
-      || this.accessory.addService(Thermostat, serviceNameLeft, 'THERMOSTATLEFT');
+      || this.accessory.addService(Thermostat, serviceNameLeft, 'LEFT');
     const thermostatRight = this.accessory.getService(serviceNameRight)
-      || this.accessory.addService(Thermostat, serviceNameRight, 'THERMOSTATRIGHT');
+      || this.accessory.addService(Thermostat, serviceNameRight, 'RIGHT');
 
     // name
     const nameLeft = this.displayName?.left || this.device.name + ' Left';
@@ -690,25 +728,29 @@ export class ElectricMatDouble extends ElectricMat {
     });
 
     this.deviceStatus.isLeftEnabledChanges.subscribe((isLeftEnabled: boolean) => {
-      /* At this point, power should be ON */
+      const { isPowerOn } = this.deviceStatus;
+      const isLeftRunning = isPowerOn && isLeftEnabled;
+
       thermostatLeft.updateCharacteristic(
         CurrentHeatingCoolingState,
-        isLeftEnabled ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
+        isLeftRunning ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
       );
       thermostatLeft.updateCharacteristic(
         TargetHeatingCoolingState,
-        isLeftEnabled ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
+        isLeftRunning ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
       );
     });
     this.deviceStatus.isRightEnabledChanges.subscribe((isRightEnabled: boolean) => {
-      /* At this point, power should be ON */
+      const { isPowerOn } = this.deviceStatus;
+      const isRightRunning = isPowerOn && isRightEnabled;
+
       thermostatRight.updateCharacteristic(
         CurrentHeatingCoolingState,
-        isRightEnabled ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
+        isRightRunning ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
       );
       thermostatRight.updateCharacteristic(
         TargetHeatingCoolingState,
-        isRightEnabled ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
+        isRightRunning ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
       );
     });
 
@@ -792,8 +834,10 @@ export class ElectricMatDouble extends ElectricMat {
     if (isEnable && !isPowerOn && isLeftEnabled) {
       await this.service.activate(this.device, true);
     } else if (!isEnable && isPowerOn && !isRightEnabled) {
+      // If it tries to disable left zone while right zone is already disabled, just turn off the device
       await this.service.activate(this.device, false);
     } else {
+      // We can simply enable/disable the zone by setting the target temperature
       const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
       this.thermostatLeft?.updateCharacteristic(TargetTemperature, temperature);
       await this.service.setZoneTemperature(this.device, 'left', temperature);
@@ -840,14 +884,17 @@ export class ElectricMatDouble extends ElectricMat {
     if (isEnable && !isPowerOn && isRightEnabled) {
       await this.service.activate(this.device, true);
     } else if (!isEnable && isPowerOn && !isLeftEnabled) {
+      // If it tries to disable right zone while left zone is already disabled, just turn off the device
       await this.service.activate(this.device, false);
     } else {
+      // We can simply enable/disable the zone by setting the target temperature
       const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
       this.thermostatRight?.updateCharacteristic(TargetTemperature, temperature);
       await this.service.setZoneTemperature(this.device, 'right', temperature);
     }
   }
 
+  // Only used for HeaterCooler Service
   private async getHeaterStateLeft(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
@@ -869,6 +916,7 @@ export class ElectricMatDouble extends ElectricMat {
     return state[0];
   }
 
+  // Only used for HeaterCooler Service
   private async getHeaterStateRight(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;

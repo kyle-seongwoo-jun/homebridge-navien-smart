@@ -35,6 +35,7 @@ export class NavienDeviceStatusRepository {
     const { heatRange } = this.device.functions;
 
     // initialize status
+    // Please refer to the comments in the getter/setter.
     this._isConnected = false;
     this._isPowerOn = false;
     this._isLeftEnabled = false;
@@ -78,6 +79,7 @@ export class NavienDeviceStatusRepository {
             const temperatureLeft = left?.temperature;
             if ('enable' in left) {
               this.isLeftEnabled = left.enable!;
+              // adjust temperatureSet when left is enabled/disabled
               if (left.enable) {
                 if (this.temperatureSet <= heatRange.min) {
                   this.temperatureSet = heatRange.min + heatRange.step;
@@ -94,6 +96,7 @@ export class NavienDeviceStatusRepository {
               }
               if ('set' in temperatureLeft) {
                 this.temperatureSet = temperatureLeft.set!;
+                // adjust isLeftEnabled when temperatureSet is changed
                 if (temperatureLeft.set! > heatRange.min) {
                   this.isLeftEnabled = true;
                 } else {
@@ -106,6 +109,7 @@ export class NavienDeviceStatusRepository {
             const temperatureRight = right?.temperature;
             if ('enable' in right) {
               this.isRightEnabled = right.enable!;
+              // adjust temperatureSetRight when right is enabled/disabled
               if (right.enable) {
                 if (this.temperatureSetRight <= heatRange.min) {
                   this.temperatureSetRight = heatRange.min + heatRange.step;
@@ -122,6 +126,7 @@ export class NavienDeviceStatusRepository {
               }
               if ('set' in temperatureRight) {
                 this.temperatureSetRight = temperatureRight.set!;
+                // adjust isRightEnabled when temperatureSetRight is changed
                 if (temperatureRight.set! > heatRange.min) {
                   this.isRightEnabled = true;
                 } else {
@@ -133,6 +138,7 @@ export class NavienDeviceStatusRepository {
         } else {
           const single = (heater as SingleHeaterState)?.single;
           if (single?.temperature !== undefined) {
+            // isLeftEnabled, isRightEnabled are always false for single heater
             const temperature = single?.temperature;
             if ('current' in temperature) {
               this.temperatureCurrent = temperature.current!;
@@ -167,10 +173,16 @@ export class NavienDeviceStatusRepository {
     });
   }
 
+  /**
+   * isConnected: true when the device is connected to the AWS IoT Service
+   */
   get isConnected() {
     return this._isConnected;
   }
 
+  /**
+   * isPowerOn: true when the device is powered on(operationMode is ON)
+   */
   get isPowerOn() {
     return this._isPowerOn;
   }
@@ -183,6 +195,11 @@ export class NavienDeviceStatusRepository {
     this.isPowerOnSubject.next(value);
   }
 
+  /**
+   * isLeftEnabled: true when the left heater is enabled.
+   * It may be true even when the device is not working(`isPowerOn` is false).
+   * Always false for single heater.
+   */
   get isLeftEnabled() {
     return this._isLeftEnabled;
   }
@@ -195,6 +212,11 @@ export class NavienDeviceStatusRepository {
     this.isLeftEnabledSubject.next(value);
   }
 
+  /**
+   * isRightEnabled: true when the right heater is enabled.
+   * It may be true even when the device is not working(`isPowerOn` is false).
+   * Always false for single heater.
+   */
   get isRightEnabled() {
     return this._isRightEnabled;
   }
@@ -207,6 +229,11 @@ export class NavienDeviceStatusRepository {
     this.isRightEnabledSubject.next(value);
   }
 
+  /**
+   * isIdle: true when the device on(`isPowerOn` is true) but not working.
+   * Only used for accessoryType HeaterCooler.
+   * For double heater, it represents state of left heater.
+   */
   get isIdle() {
     const { heatRange } = this.device.functions;
     if (this._temperatureCurrent === null) {
@@ -215,6 +242,11 @@ export class NavienDeviceStatusRepository {
     return this._isPowerOn && this._temperatureSet <= this._temperatureCurrent;
   }
 
+  /**
+   * isRightIdle: true when the device on(`isPowerOn` is true) but not working.
+   * Only used for accessoryType HeaterCooler.
+   * Only used for double heater, it represents state of right heater.
+   */
   get isRightIdle() {
     const { heatRange } = this.device.functions;
     if (this._temperatureCurrentRight === null) {
@@ -223,6 +255,11 @@ export class NavienDeviceStatusRepository {
     return this._isPowerOn && this._temperatureSetRight <= this._temperatureCurrentRight;
   }
 
+  /**
+   * temperatureCurrent: current temperature of the heater.
+   * If the device does not support current temperature, it returns `temperatureSet`.
+   * For double heater, it represents state of left heater.
+   */
   get temperatureCurrent() {
     return this._temperatureCurrent || this._temperatureSet;
   }
@@ -235,6 +272,10 @@ export class NavienDeviceStatusRepository {
     this.temperatureCurrentSubject.next(value);
   }
 
+  /**
+   * temperatureSet: target temperature of the heater.
+   * For double heater, it represents state of left heater.
+   */
   get temperatureSet() {
     return this._temperatureSet;
   }
@@ -250,6 +291,11 @@ export class NavienDeviceStatusRepository {
     }
   }
 
+  /**
+   * temperatureCurrentRight: current temperature of the heater.
+   * If the device does not support current temperature, it returns `temperatureSetRight`.
+   * Only used for double heater, it represents state of right heater.
+   */
   get temperatureCurrentRight() {
     return this._temperatureCurrentRight || this._temperatureSetRight;
   }
@@ -262,6 +308,10 @@ export class NavienDeviceStatusRepository {
     this.temperatureCurrentRightSubject.next(value);
   }
 
+  /**
+   * temperatureSetRight: target temperature of the heater.
+   * Only used for double heater, it represents state of right heater.
+   */
   get temperatureSetRight() {
     return this._temperatureSetRight;
   }
@@ -277,6 +327,9 @@ export class NavienDeviceStatusRepository {
     }
   }
 
+  /*
+   * isLocked: true when the child lock is enabled.
+   */
   get isLocked() {
     return this._isLocked;
   }
