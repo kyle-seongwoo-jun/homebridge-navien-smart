@@ -138,7 +138,24 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     // the cached devices we stored in the `configureAccessory` method above
     const existingAccessory = this.accessories.get(uuid);
 
+    const isDoubleHeatingMat = device.isDouble && this.config.separateControl;
+
     if (existingAccessory) {
+      const hasService = (serviceType: typeof Service) => existingAccessory.services.some((service) => service instanceof serviceType);
+      if (
+        (isDoubleHeatingMat !== hasService(this.Service.Switch)) ||
+        (this.config.accessoryType === 'HeaterCooler' && !hasService(this.Service.HeaterCooler)) ||
+        (this.config.accessoryType === 'Thermostat' && !hasService(this.Service.Thermostat))
+      ) {
+        this.log.info(
+          'Cached accessory does not match current config. Removing existing accessory from cache:',
+          existingAccessory.displayName,
+        );
+        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+        this.accessories.delete(uuid);
+
+        return this._registerDeviceAsAccessory(device);
+      }
       // the accessory already exists
       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
@@ -148,7 +165,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the restored accessory
       // this is imported from `platformAccessory.ts`
-      if (device.isDouble && this.config.separateControl) {
+      if (isDoubleHeatingMat) {
         new DoubleHeatingMat(this, existingAccessory);
       } else {
         new SingleHeatingMat(this, existingAccessory);
@@ -171,7 +188,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the newly create accessory
       // this is imported from `platformAccessory.ts`
-      if (device.isDouble && this.config.separateControl) {
+      if (isDoubleHeatingMat) {
         new DoubleHeatingMat(this, accessory);
       } else {
         new SingleHeatingMat(this, accessory);

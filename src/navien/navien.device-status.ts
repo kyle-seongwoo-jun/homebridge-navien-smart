@@ -234,8 +234,8 @@ export class NavienDeviceStatusRepository {
    * For double heater, it represents state of left heater.
    */
   get isIdle() {
-    const { heatRange } = this.device.functions;
     if (this._temperatureCurrent === null) {
+      const { heatRange } = this.device.functions;
       return this._isPowerOn && this._temperatureSet === heatRange.min;
     }
     return this._isPowerOn && this._temperatureSet <= this._temperatureCurrent;
@@ -247,8 +247,8 @@ export class NavienDeviceStatusRepository {
    * Only used for double heater, it represents state of right heater.
    */
   get isRightIdle() {
-    const { heatRange } = this.device.functions;
     if (this._temperatureCurrentRight === null) {
+      const { heatRange } = this.device.functions;
       return this._isPowerOn && this._temperatureSetRight === heatRange.min;
     }
     return this._isPowerOn && this._temperatureSetRight <= this._temperatureCurrentRight;
