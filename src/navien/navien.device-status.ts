@@ -30,7 +30,6 @@ export class NavienDeviceStatusRepository {
     private readonly log: Logger,
     private readonly pubsub: AwsPubSub,
     public readonly device: NavienDevice,
-    public readonly isDouble: boolean,
   ) {
     const { heatRange } = this.device.functions;
 
@@ -72,7 +71,7 @@ export class NavienDeviceStatusRepository {
       // status update
       if ('heater' in state) {
         const heater = state.heater!;
-        if (isDouble) {
+        if (this.device.isDouble) {
           const left = (heater as DoubleHeaterState)?.left;
           const right = (heater as DoubleHeaterState)?.right;
           if (left !== undefined) {

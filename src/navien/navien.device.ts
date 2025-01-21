@@ -19,10 +19,10 @@ export class NavienDevice {
 
   get isDouble() {
     /*
-     * XXX(junbongwe): There is no explicit way to query whether a device is double or single.
-     * For now, just check if there exists field `left` in `Properties.nickName.side`.
+     * XXX(junbongwe): There is no explicit field or way to query whether a device is double or single.
+     * For now, just check if there exists field `side` in `Properties.nickName`.
      */
-    return this.Properties.nickName?.side?.left !== undefined;
+    return this.Properties.nickName.side !== undefined;
   }
 
   get functions() {

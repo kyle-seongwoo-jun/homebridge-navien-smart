@@ -70,7 +70,7 @@ export class NavienService {
     this.deviceStatusRepositories = Object.fromEntries(
       devices.map((device) => [
         device.id,
-        new NavienDeviceStatusRepository(this.log, this.pubsub!, device, device.isDouble),
+        new NavienDeviceStatusRepository(this.log, this.pubsub!, device),
       ]),
     );
     this.log.info('Devices:', devices.map((device) => device.name));
@@ -100,9 +100,7 @@ export class NavienService {
   }
 
   private _setTemperature(device: NavienDevice, temperature: number) {
-    const { isDouble } = this.getDeviceStatusRepositoryOf(device)!;
-
-    if (isDouble) {
+    if (device.isDouble) {
       return Promise.all([
         this.api.setTemperature(device, 'left', temperature, device.functions.heatRange),
         this.api.setTemperature(device, 'right', temperature, device.functions.heatRange),
@@ -154,7 +152,7 @@ export class NavienService {
     }
   }
 
-  public async setZoneTemperature(device: NavienDevice, zone: string, temperature: number) {
+  public async setZoneTemperature(device: NavienDevice, zone: 'single' | 'left' | 'right', temperature: number) {
     this.log.info('Setting temperature to', temperature, 'for device', device.name, 'zone', zone);
     const request = this.api.setTemperature(device, zone, temperature, device.functions.heatRange);
 

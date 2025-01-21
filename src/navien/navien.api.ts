@@ -161,7 +161,9 @@ export class NavienApi {
     });
   }
 
-  public setTemperature(device: Device, zone: string, temperature: number, range: { min: number; max: number; step: number }) {
+  public setTemperature(
+    device: Device, zone: 'single' | 'left' | 'right', temperature: number, range: { min: number; max: number; step: number },
+  ) {
     // validate temperature
     const { min, max, step } = range;
     const enable = temperature > min;
@@ -181,9 +183,6 @@ export class NavienApi {
       },
     });
 
-    if (!['single', 'left', 'right'].includes(zone)) {
-      throw new Error(`Invalid zone: ${zone}`);
-    }
     const heater: HeaterState = zone === 'single'
       ? { single: heaterItem(temperature) } as SingleHeaterState
       : { [zone]: heaterItem(temperature) } as DoubleHeaterState;
