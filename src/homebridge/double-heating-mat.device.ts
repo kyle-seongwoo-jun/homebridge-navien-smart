@@ -389,7 +389,7 @@ export class DoubleHeatingMat extends HeatingMat {
       // We can simply enable/disable the zone by setting the target temperature
       const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
       this.thermostatLeft?.updateCharacteristic(TargetTemperature, temperature);
-      await this.service.setZoneTemperature(this.device, 'left', temperature);
+      await this.service.setTemperature(this.device, temperature, 'left');
     }
   }
 
@@ -439,7 +439,7 @@ export class DoubleHeatingMat extends HeatingMat {
       // We can simply enable/disable the zone by setting the target temperature
       const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
       this.thermostatRight?.updateCharacteristic(TargetTemperature, temperature);
-      await this.service.setZoneTemperature(this.device, 'right', temperature);
+      await this.service.setTemperature(this.device, temperature, 'right');
     }
   }
 
@@ -506,7 +506,7 @@ export class DoubleHeatingMat extends HeatingMat {
 
     this.log.info('Set TemperatureSet:', temperature);
 
-    await this.service.setZoneTemperature(this.device, 'left', temperature);
+    await this.service.setTemperature(this.device, temperature, 'left');
   }
 
   private async getTemperatureSetRight(): Promise<CharacteristicValue> {
@@ -528,6 +528,6 @@ export class DoubleHeatingMat extends HeatingMat {
 
     this.log.info('Set TemperatureSetRight:', temperature);
 
-    await this.service.setZoneTemperature(this.device, 'right', temperature);
+    await this.service.setTemperature(this.device, temperature, 'right');
   }
 }

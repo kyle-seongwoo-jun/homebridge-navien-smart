@@ -4,9 +4,9 @@ import { Logging } from 'homebridge';
 
 import { OperationMode } from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
-import { NavienException } from './exceptions/index.js';
+import { NavienException, ValidationException } from './exceptions/index.js';
 import { Device } from './interfaces/index.js';
-import { NavienApi } from './navien.api.js';
+import { HeatingZone, NavienApi } from './navien.api.js';
 import { NavienDevice } from './navien.device.js';
 import { NavienDeviceStatusRepository } from './navien.device-status.js';
 import { NavienSessionManager } from './navien.session-manager.js';
@@ -99,14 +99,56 @@ export class NavienService {
     return this.api.setOperationMode(device, isActive ? OperationMode.ON : OperationMode.OFF);
   }
 
-  private _setTemperature(device: NavienDevice, temperature: number) {
+  private _setZoneTemperature(device: NavienDevice, zone: HeatingZone, temperature: number) {
+    // validate zone
+    this._validateZone(device, zone);
+
+    // validate temperature
+    const { min, max, step } = device.functions.heatRange;
+    this._validateTemperature(temperature, { min, max, step });
+
+    const enable = temperature > min;
+    return this.api.setTemperature(device, {
+      [zone]: { enable, temperature },
+    });
+  }
+
+  // set temperature for both zones if device is double,
+  // otherwise set temperature for single zone
+  private _setUnifiedTemperature(device: NavienDevice, temperature: number) {
+    // validate temperature
+    const { min, max, step } = device.functions.heatRange;
+    this._validateTemperature(temperature, { min, max, step });
+
+    const enable = temperature > min;
     if (device.isDouble) {
-      return Promise.all([
-        this.api.setTemperature(device, 'left', temperature, device.functions.heatRange),
-        this.api.setTemperature(device, 'right', temperature, device.functions.heatRange),
-      ]);
+      return this.api.setTemperature(device, {
+        left: { enable, temperature },
+        right: { enable, temperature },
+      });
     } else {
-      return this.api.setTemperature(device, 'single', temperature, device.functions.heatRange);
+      return this.api.setTemperature(device, {
+        single: { enable, temperature },
+      });
+    }
+  }
+
+  private _validateZone(device: NavienDevice, zone: HeatingZone) {
+    if (zone === 'single' && device.isDouble) {
+      throw new ValidationException('Device is double, so zone cannot be "single".');
+    }
+    if ((zone === 'left' || zone === 'right') && !device.isDouble) {
+      throw new ValidationException(`Device is single, so zone cannot be "${zone}".`);
+    }
+  }
+
+  private _validateTemperature(temperature: number, range: { min: number; max: number; step: number }) {
+    const { min, max, step } = range;
+    if (temperature < min || temperature > max) {
+      throw new ValidationException(`Temperature must be between ${min} and ${max}. current: ${temperature}`);
+    }
+    if (temperature % step !== 0) {
+      throw new ValidationException(`Temperature must be multiple of ${step}. current: ${temperature}`);
     }
   }
 
@@ -133,30 +175,16 @@ export class NavienService {
     }
   }
 
-  public async setTemperature(device: NavienDevice, temperature: number) {
-    this.log.info('Setting temperature to', temperature, 'for device', device.name);
-
-    const success = await this._setTemperature(device, temperature).then(() => true).catch((error) => {
-      if (error instanceof NavienException) {
-        this.log.error(error.toString());
-        return false;
-      }
-      this.log.error('Unknown error while setting temperature for device', device.name, ':', error);
-      return false;
-    });
-
-    if (success) {
-      this.log.info('Temperature set to', temperature, 'for device', device.name);
-    } else {
-      this.log.error('Failed to set temperature to', temperature, 'for device', device.name);
-    }
-  }
-
-  public async setZoneTemperature(device: NavienDevice, zone: 'single' | 'left' | 'right', temperature: number) {
+  public async setTemperature(device: NavienDevice, temperature: number, zone?: HeatingZone) {
     this.log.info('Setting temperature to', temperature, 'for device', device.name, 'zone', zone);
-    const request = this.api.setTemperature(device, zone, temperature, device.functions.heatRange);
 
-    const success = await request.then(() => true).catch((error) => {
+    // if zone is provided, set temperature for the specified zone
+    // otherwise set temperature for both zones
+    const request = zone ?
+      () => this._setZoneTemperature(device, zone, temperature) :
+      () => this._setUnifiedTemperature(device, temperature);
+
+    const success = await request().then(() => true).catch((error) => {
       if (error instanceof NavienException) {
         this.log.error(error.toString());
         return false;
@@ -168,7 +196,7 @@ export class NavienService {
     if (success) {
       this.log.info('Temperature set to', temperature, 'for device', device.name, 'zone', zone);
     } else {
-      this.log.error('Failed to set temperature to', temperature, 'for device', device.name);
+      this.log.error('Failed to set temperature to', temperature, 'for device', device.name, 'zone', zone);
     }
   }
 
