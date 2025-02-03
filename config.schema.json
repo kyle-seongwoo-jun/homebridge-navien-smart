@@ -61,6 +61,45 @@
           }
         ],
         "required": true
+      },
+      "soundEnabled": {
+        "title": "Enable Sound on Operation",
+        "type": "boolean",
+        "default": false
+      },
+      "separateControl": {
+        "title": "Separate Control",
+        "type": "boolean",
+        "default": false
+      },
+      "displayName": {
+        "title": "Display Name",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "device": {
+              "title": "Device Name in Navien Smart App",
+              "type": "string"
+            },
+            "mainSwitch": {
+              "title": "Main Switch Name",
+              "type": "string"
+            },
+            "left": {
+              "title": "Left Controller Name",
+              "type": "string"
+            },
+            "right": {
+              "title": "Right Controller Name",
+              "type": "string"
+            }
+          },
+          "required": [ "device" ]
+        },
+        "condition": {
+          "functionBody": "return model.separateControl;"
+        }
       }
     }
   }

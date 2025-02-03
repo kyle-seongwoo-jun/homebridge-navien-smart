@@ -100,14 +100,14 @@ export class NavienService {
   }
 
   private _setTemperature(device: NavienDevice, temperature: number) {
-    const { isDouble } = this.getDeviceStatusRepositoryOf(device)!;
-    if (isDouble === null) {
-      this.log.warn('device seems to be initialized or disconnected. but setTemperature is called', device.name);
-      return Promise.resolve(); // do nothing
+    if (device.isDouble) {
+      return Promise.all([
+        this.api.setTemperature(device, 'left', temperature, device.functions.heatRange),
+        this.api.setTemperature(device, 'right', temperature, device.functions.heatRange),
+      ]);
+    } else {
+      return this.api.setTemperature(device, 'single', temperature, device.functions.heatRange);
     }
-
-    const temp = isDouble ? [temperature, temperature] as [number, number] : temperature;
-    return this.api.setTemperature(device, temp, device.functions.heatRange);
   }
 
   private _lock(device: NavienDevice, isLocked: boolean) {
@@ -147,6 +147,26 @@ export class NavienService {
 
     if (success) {
       this.log.info('Temperature set to', temperature, 'for device', device.name);
+    } else {
+      this.log.error('Failed to set temperature to', temperature, 'for device', device.name);
+    }
+  }
+
+  public async setZoneTemperature(device: NavienDevice, zone: 'single' | 'left' | 'right', temperature: number) {
+    this.log.info('Setting temperature to', temperature, 'for device', device.name, 'zone', zone);
+    const request = this.api.setTemperature(device, zone, temperature, device.functions.heatRange);
+
+    const success = await request.then(() => true).catch((error) => {
+      if (error instanceof NavienException) {
+        this.log.error(error.toString());
+        return false;
+      }
+      this.log.error('Unknown error while setting temperature for device', device.name, ':', error);
+      return false;
+    });
+
+    if (success) {
+      this.log.info('Temperature set to', temperature, 'for device', device.name, 'zone', zone);
     } else {
       this.log.error('Failed to set temperature to', temperature, 'for device', device.name);
     }

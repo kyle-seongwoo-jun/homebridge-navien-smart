@@ -13,9 +13,11 @@ import { NavienUser } from './navien.user.js';
 type RequestMethods = 'GET' | 'POST';
 
 export class NavienApi {
+
   constructor(
     private readonly log: Logging,
     private readonly sessionManager: NavienSessionManager,
+    private readonly soundEnabled: boolean,
   ) { }
 
   private get session(): NavienSession | undefined {
@@ -135,6 +137,7 @@ export class NavienApi {
               event: {
                 modelCode: parseInt(modelCode),
               },
+              beep: this.soundEnabled,
               ...payload,
             },
           },
@@ -158,43 +161,42 @@ export class NavienApi {
     });
   }
 
-  public setTemperature(device: Device, temperature: number | [number, number], range: { min: number; max: number; step: number }) {
+  public setTemperature(
+    device: Device, zone: 'single' | 'left' | 'right', temperature: number, range: { min: number; max: number; step: number },
+  ) {
     // validate temperature
     const { min, max, step } = range;
-    const validateTemperature = (temperature: number) => {
-      if (temperature < min || temperature > max) {
-        throw new Error(`Temperature must be between ${min} and ${max}. current: ${temperature}`);
-      }
-      if (temperature % step !== 0) {
-        throw new Error(`Temperature must be multiple of ${step}. current: ${temperature}`);
-      }
-    };
-    if (typeof temperature === 'number') {
-      validateTemperature(temperature);
-    } else {
-      validateTemperature(temperature[0]);
-      validateTemperature(temperature[1]);
+    const enable = temperature > min;
+
+    if (temperature < min || temperature > max) {
+      throw new Error(`Temperature must be between ${min} and ${max}. current: ${temperature}`);
+    }
+    if (temperature % step !== 0) {
+      throw new Error(`Temperature must be multiple of ${step}. current: ${temperature}`);
     }
 
     // create heater payload
     const heaterItem = (temperature: number) => (<HeaterItemState>{
-      enable: temperature > min,
+      enable,
       temperature: {
         set: temperature,
       },
     });
-    const heater: HeaterState = typeof temperature === 'number' ?
-      <SingleHeaterState>{
-        single: heaterItem(temperature),
-      } :
-      <DoubleHeaterState>{
-        left: heaterItem(temperature[0]),
-        right: heaterItem(temperature[1]),
-      };
 
-    return this.controlDevice(device, {
-      heater: heater,
-    });
+    const heater: HeaterState = zone === 'single'
+      ? { single: heaterItem(temperature) } as SingleHeaterState
+      : { [zone]: heaterItem(temperature) } as DoubleHeaterState;
+
+    if (enable) {
+      return this.controlDevice(device, {
+        operationMode: OperationMode.ON,
+        heater,
+      });
+    } else {
+      return this.controlDevice(device, {
+        heater,
+      });
+    }
   }
 
   public setChildLock(device: Device, isLocked: boolean) {

@@ -62,7 +62,9 @@ export interface DoubleHeaterState {
 export interface HeaterItemState {
     enable?: boolean;
     temperature: {
-        set: number; // celcius
+        // celcius
+        current?: number;
+        set?: number;
     };
 }
 

@@ -1,7 +1,8 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 import path from 'path';
 
-import ElectricMat from './homebridge/electric-mat.device.js';
+import { DoubleHeatingMat } from './homebridge/double-heating-mat.device.js';
+import { SingleHeatingMat } from './homebridge/single-heating-mat.device.js';
 import { NavienException } from './navien/exceptions/index.js';
 import { NavienApi } from './navien/navien.api.js';
 import { NavienAuth } from './navien/navien.auth.js';
@@ -13,6 +14,13 @@ import { Persist } from './utils/persist.util.js';
 
 type NavienDeviceContext = { device: NavienDevice };
 export type NavienPlatformAccessory = PlatformAccessory<NavienDeviceContext>;
+
+export type DisplayName = {
+  device: string;
+  mainSwitch?: string;
+  left?: string;
+  right?: string;
+};
 export type NavienPlatformConfig = PlatformConfig & {
   authMode: 'account' | 'token';
   username: string;
@@ -20,6 +28,9 @@ export type NavienPlatformConfig = PlatformConfig & {
   refreshToken?: string;
   accountSeq?: number;
   accessoryType: 'HeaterCooler' | 'Thermostat';
+  soundEnabled: boolean;
+  separateControl: boolean;
+  displayName?: DisplayName[];
 };
 
 /**
@@ -54,15 +65,26 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       log.success = log.info;
     }
 
-    this.config = config as NavienPlatformConfig;
+    this.config = this.initializeConfig(config);
 
     // initialize navien services
     const auth = new NavienAuth(log);
     const sessionManager = new NavienSessionManager(log, auth, this._createPersist(), this.config);
-    const httpApi = new NavienApi(log, sessionManager);
+    const httpApi = new NavienApi(log, sessionManager, this.config.soundEnabled);
     this.navienService = new NavienService(log, sessionManager, httpApi);
 
     this.api.on('didFinishLaunching', this.onLaunched.bind(this));
+  }
+
+  /**
+   * Initialize the config
+   */
+  initializeConfig(config: PlatformConfig) {
+    // migrate new config @1.8.0
+    config.soundEnabled = config.soundEnabled ?? false;
+    config.separateControl = config.separateControl ?? false;
+
+    return config as NavienPlatformConfig;
   }
 
   /**
@@ -127,7 +149,24 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     // the cached devices we stored in the `configureAccessory` method above
     const existingAccessory = this.accessories.get(uuid);
 
+    const isDoubleHeatingMat = device.isDouble && this.config.separateControl;
+
     if (existingAccessory) {
+      const hasService = (serviceType: typeof Service) => existingAccessory.services.some((service) => service instanceof serviceType);
+      if (
+        (isDoubleHeatingMat !== hasService(this.Service.Switch)) ||
+        (this.config.accessoryType === 'HeaterCooler' && !hasService(this.Service.HeaterCooler)) ||
+        (this.config.accessoryType === 'Thermostat' && !hasService(this.Service.Thermostat))
+      ) {
+        this.log.info(
+          'Cached accessory does not match current config. Removing existing accessory from cache:',
+          existingAccessory.displayName,
+        );
+        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+        this.accessories.delete(uuid);
+
+        return this._registerDeviceAsAccessory(device);
+      }
       // the accessory already exists
       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
@@ -137,7 +176,11 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the restored accessory
       // this is imported from `platformAccessory.ts`
-      new ElectricMat(this, existingAccessory);
+      if (isDoubleHeatingMat) {
+        new DoubleHeatingMat(this, existingAccessory);
+      } else {
+        new SingleHeatingMat(this, existingAccessory);
+      }
 
       // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
       // remove platform accessories when no longer present
@@ -156,7 +199,11 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the newly create accessory
       // this is imported from `platformAccessory.ts`
-      new ElectricMat(this, accessory);
+      if (isDoubleHeatingMat) {
+        new DoubleHeatingMat(this, accessory);
+      } else {
+        new SingleHeatingMat(this, accessory);
+      }
 
       // link the accessory to your platform
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
