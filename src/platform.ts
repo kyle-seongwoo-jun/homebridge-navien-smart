@@ -148,15 +148,10 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     // the cached devices we stored in the `configureAccessory` method above
     const existingAccessory = this.accessories.get(uuid);
 
-    const isDoubleHeatingMat = device.isDouble && this.config.separateControl;
-
     if (existingAccessory) {
-      const hasService = (serviceType: typeof Service) => existingAccessory.services.some((service) => service instanceof serviceType);
-      if (
-        (isDoubleHeatingMat !== hasService(this.Service.Switch)) ||
-        (this.config.accessoryType === 'HeaterCooler' && !hasService(this.Service.HeaterCooler)) ||
-        (this.config.accessoryType === 'Thermostat' && !hasService(this.Service.Thermostat))
-      ) {
+      // if the accessory type has changed,
+      // remove and re-register the accessory
+      if (this._isAccessoryTypeChanged(device, existingAccessory)) {
         this.log.info(
           'Cached accessory does not match current config. Removing existing accessory from cache:',
           existingAccessory.displayName,
@@ -166,6 +161,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
         return this._registerDeviceAsAccessory(device);
       }
+
       // the accessory already exists
       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
@@ -202,6 +198,15 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
     // push into discoveredCacheUUIDs
     this.discoveredCacheUUIDs.push(uuid);
+  }
+
+  private _isAccessoryTypeChanged(device: NavienDevice, existingAccessory: NavienPlatformAccessory) {
+    const hasService = (serviceType: typeof Service) => existingAccessory.services.some((service) => service instanceof serviceType);
+
+    const isDoubleHeatingMat = device.isDouble && this.config.separateControl;
+    return (isDoubleHeatingMat !== hasService(this.Service.Switch)) ||
+      (this.config.accessoryType === 'HeaterCooler' && !hasService(this.Service.HeaterCooler)) ||
+      (this.config.accessoryType === 'Thermostat' && !hasService(this.Service.Thermostat));
   }
 
   /**
