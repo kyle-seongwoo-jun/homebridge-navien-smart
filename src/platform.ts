@@ -30,7 +30,7 @@ export type NavienPlatformConfig = PlatformConfig & {
   accessoryType: 'HeaterCooler' | 'Thermostat';
   soundEnabled: boolean;
   separateControl: boolean;
-  displayName: DisplayName[];
+  displayName?: DisplayName[];
 };
 
 /**
@@ -65,7 +65,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
       log.success = log.info;
     }
 
-    this.config = config as NavienPlatformConfig;
+    this.config = this.initializeConfig(config);
 
     // initialize navien services
     const auth = new NavienAuth(log);
@@ -74,6 +74,17 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     this.navienService = new NavienService(log, sessionManager, httpApi);
 
     this.api.on('didFinishLaunching', this.onLaunched.bind(this));
+  }
+
+  /**
+   * Initialize the config
+   */
+  initializeConfig(config: PlatformConfig) {
+    // migrate new config @1.8.0
+    config.soundEnabled = config.soundEnabled ?? false;
+    config.separateControl = config.separateControl ?? false;
+
+    return config as NavienPlatformConfig;
   }
 
   /**

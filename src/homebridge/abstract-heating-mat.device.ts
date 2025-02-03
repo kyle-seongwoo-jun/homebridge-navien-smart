@@ -31,7 +31,7 @@ export abstract class AbstractHeatingMat {
     const { device } = accessory.context;
     this.device = device;
     this.deviceStatus = this.service.getDeviceStatusRepositoryOf(device)!;
-    this.displayName = displayName.find((item) => item.device === device.name);
+    this.displayName = displayName?.find((item) => item.device === device.name);
 
     // set accessory information
     this.accessory.getService(Service.AccessoryInformation)!
