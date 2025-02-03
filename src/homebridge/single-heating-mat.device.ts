@@ -57,12 +57,12 @@ export class SingleHeatingMat extends HeatingMat {
 
     // current temperature
     heater.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrent.bind(this));
+      .onGet(this.getCurrentTemperature.bind(this));
 
     // target temperature
     heater.getCharacteristic(HeatingThresholdTemperature)
-      .onGet(this.getTemperatureSet.bind(this))
-      .onSet(this.setTemperatureSet.bind(this));
+      .onGet(this.getTargetTemperature.bind(this))
+      .onSet(this.setTargetTemperature.bind(this));
 
     const getCurrentHeaterState = (isPowerOn: boolean, isIdle: boolean) => {
       return isPowerOn ?
@@ -127,12 +127,12 @@ export class SingleHeatingMat extends HeatingMat {
 
     // current temperature
     thermostat.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrent.bind(this));
+      .onGet(this.getCurrentTemperature.bind(this));
 
     // target temperature
     thermostat.getCharacteristic(TargetTemperature)
-      .onGet(this.getTemperatureSet.bind(this))
-      .onSet(this.setTemperatureSet.bind(this));
+      .onGet(this.getTargetTemperature.bind(this))
+      .onSet(this.setTargetTemperature.bind(this));
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
@@ -229,25 +229,5 @@ export class SingleHeatingMat extends HeatingMat {
 
     this.log.debug('Set Heating State:', isPowerOn ? 'HEAT' : 'OFF');
     await this.service.activate(this.device, isPowerOn);
-  }
-
-  private async getTemperatureSet(): Promise<CharacteristicValue> {
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, temperatureSet } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get TemperatureSet: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get TemperatureSet:', temperatureSet);
-    return temperatureSet;
-  }
-
-  private async setTemperatureSet(value: CharacteristicValue) {
-    const temperature = value as number;
-
-    this.log.debug('Set TemperatureSet:', temperature);
-    await this.service.setTemperature(this.device, temperature);
   }
 }

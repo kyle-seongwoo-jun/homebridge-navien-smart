@@ -138,40 +138,56 @@ export abstract class HeatingMat {
   }
 
   /**
-   * Get current temperature.
-   * For Single, it returns the current temperature of the device.
-   * For Double, it returns the current temperature of the left side.
+   * Get current temperature of the specified zone.
+   * If device is not supporting current temperature, it will return target temperature.
+   * @param zone - single or left/right, `undefined` for unified control
    * @returns current temperature
    */
-  protected async getTemperatureCurrent(): Promise<CharacteristicValue> {
+  protected async getCurrentTemperature(zone?: HeatingZone): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, temperatureCurrent } = this.deviceStatus;
+    const { isConnected } = this.deviceStatus;
 
     if (!isConnected) {
-      this.log.info('Get TemperatureCurrent: not responding');
+      this.log.info(`Get Current Temperature: not responding, zone: ${zone ?? 'unified'}`);
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    this.log.debug('Get TemperatureCurrent:', temperatureCurrent);
-    return temperatureCurrent;
+    const temperature = this.deviceStatus.getCurrentTemperature(zone);
+
+    this.log.debug(`Get Current Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
+    return temperature;
   }
 
   /**
-   * Get current temperature.
-   * Only used for Double, it returns the current temperature of the right side.
-   * @returns current temperature of the right side
+   * Get target temperature of the specified zone.
+   * @param zone - single or left/right, `undefined` for unified
+   * @returns target temperature
    */
-  protected async getTemperatureCurrentRight(): Promise<CharacteristicValue> {
+  protected async getTargetTemperature(zone?: HeatingZone): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, temperatureCurrentRight } = this.deviceStatus;
+    const { isConnected } = this.deviceStatus;
 
     if (!isConnected) {
-      this.log.info('Get TemperatureCurrentRight: not responding');
+      this.log.info(`Get Target Temperature: not responding, zone: ${zone ?? 'unified'}`);
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    this.log.debug('Get TemperatureCurrentRight:', temperatureCurrentRight);
-    return temperatureCurrentRight;
+    const temperature = this.deviceStatus.getTargetTemperature(zone);
+
+    this.log.debug(`Get Target Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
+    return temperature;
+  }
+
+  /**
+   * Set target temperature of the specified zone.
+   * @param value - target temperature
+   * @param zone - single or left/right, `undefined` for unified
+   */
+  protected async setTargetTemperature(value: CharacteristicValue, zone?: HeatingZone) {
+    const temperature = value as number;
+
+    this.log.debug(`Set Target Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
+    await this.service.setTemperature(this.device, temperature, zone);
   }
 
   // Only used for HeaterCooler Service

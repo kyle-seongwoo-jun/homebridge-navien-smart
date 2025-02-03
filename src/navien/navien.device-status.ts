@@ -3,6 +3,7 @@ import { BehaviorSubject, Subscription } from 'rxjs';
 
 import { DoubleHeaterState, OperationMode, SingleHeaterState } from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
+import { HeatingZone } from './interfaces/index.js';
 import { NavienDevice } from './navien.device.js';
 
 export class NavienDeviceStatusRepository {
@@ -72,8 +73,8 @@ export class NavienDeviceStatusRepository {
       if ('heater' in state) {
         const heater = state.heater!;
         if (this.device.isDouble) {
-          const left = (heater as DoubleHeaterState)?.left;
-          const right = (heater as DoubleHeaterState)?.right;
+          const left = (heater as DoubleHeaterState).left;
+          const right = (heater as DoubleHeaterState).right;
           if (left !== undefined) {
             const temperatureLeft = left?.temperature;
             if ('enable' in left) {
@@ -135,7 +136,7 @@ export class NavienDeviceStatusRepository {
             }
           }
         } else {
-          const single = (heater as SingleHeaterState)?.single;
+          const single = (heater as SingleHeaterState).single;
           if (single?.temperature !== undefined) {
             // isLeftEnabled, isRightEnabled are always false for single heater
             const temperature = single?.temperature;
@@ -369,6 +370,54 @@ export class NavienDeviceStatusRepository {
 
   get lockedChanges() {
     return this.isLockedSubject.asObservable();
+  }
+
+  getCurrentTemperature(zone?: HeatingZone): number {
+    switch (zone) {
+      case 'single':
+      case 'left':
+      case undefined:
+        return this.temperatureCurrent;
+      case 'right':
+        return this.temperatureCurrentRight;
+    }
+  }
+
+  setCurrentTemperature(value: number, zone?: HeatingZone) {
+    switch (zone) {
+      case 'single':
+      case 'left':
+      case undefined:
+        this.temperatureCurrent = value;
+        break;
+      case 'right':
+        this.temperatureCurrentRight = value;
+        break;
+    }
+  }
+
+  getTargetTemperature(zone?: HeatingZone): number {
+    switch (zone) {
+      case 'single':
+      case 'left':
+      case undefined:
+        return this.temperatureSet;
+      case 'right':
+        return this.temperatureSetRight;
+    }
+  }
+
+  setTargetTemperature(value: number, zone?: HeatingZone) {
+    switch (zone) {
+      case 'single':
+      case 'left':
+      case undefined:
+        this.temperatureSet = value;
+        break;
+      case 'right':
+        this.temperatureSetRight = value;
+        break;
+    }
   }
 
   dispose() {

@@ -110,17 +110,17 @@ export class DoubleHeatingMat extends HeatingMat {
 
     // current temperature
     heaterLeft.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrent.bind(this));
+      .onGet(this.getCurrentTemperatureLeft.bind(this));
     heaterRight.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrentRight.bind(this));
+      .onGet(this.getCurrentTemperatureRight.bind(this));
 
     // target temperature
     heaterLeft.getCharacteristic(HeatingThresholdTemperature)
-      .onGet(this.getTemperatureSet.bind(this))
-      .onSet(this.setTemperatureSet.bind(this));
+      .onGet(this.getTargetTemperatureLeft.bind(this))
+      .onSet(this.setTargetTemperatureLeft.bind(this));
     heaterRight.getCharacteristic(HeatingThresholdTemperature)
-      .onGet(this.getTemperatureSetRight.bind(this))
-      .onSet(this.setTemperatureSetRight.bind(this));
+      .onGet(this.getTargetTemperatureRight.bind(this))
+      .onSet(this.setTargetTemperatureRight.bind(this));
 
     const getCurrentHeaterState = (isZoneEnabled: boolean, isZoneIdle: boolean) => {
       return isZoneEnabled ?
@@ -240,17 +240,17 @@ export class DoubleHeatingMat extends HeatingMat {
 
     //current temperature
     thermostatLeft.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrent.bind(this));
+      .onGet(this.getCurrentTemperatureLeft.bind(this));
     thermostatRight.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrentRight.bind(this));
+      .onGet(this.getCurrentTemperatureRight.bind(this));
 
     // target temperature
     thermostatLeft.getCharacteristic(TargetTemperature)
-      .onGet(this.getTemperatureSet.bind(this))
-      .onSet(this.setTemperatureSet.bind(this));
+      .onGet(this.getTargetTemperatureLeft.bind(this))
+      .onSet(this.setTargetTemperatureLeft.bind(this));
     thermostatRight.getCharacteristic(TargetTemperature)
-      .onGet(this.getTemperatureSetRight.bind(this))
-      .onSet(this.setTemperatureSetRight.bind(this));
+      .onGet(this.getTargetTemperatureRight.bind(this))
+      .onSet(this.setTargetTemperatureRight.bind(this));
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
@@ -477,43 +477,27 @@ export class DoubleHeatingMat extends HeatingMat {
     return state[0];
   }
 
-  private async getTemperatureSet(): Promise<CharacteristicValue> {
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, temperatureSet } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get TemperatureSet: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get TemperatureSet:', temperatureSet);
-    return temperatureSet;
+  private async getCurrentTemperatureLeft(): Promise<CharacteristicValue> {
+    return this.getCurrentTemperature('left');
   }
 
-  private async setTemperatureSet(value: CharacteristicValue) {
-    const temperature = value as number;
-
-    this.log.debug('Set TemperatureSet:', temperature);
-    await this.service.setTemperature(this.device, temperature, 'left');
+  private async getCurrentTemperatureRight(): Promise<CharacteristicValue> {
+    return this.getCurrentTemperature('right');
   }
 
-  private async getTemperatureSetRight(): Promise<CharacteristicValue> {
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, temperatureSetRight } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get TemperatureSetRight: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get TemperatureSetRight:', temperatureSetRight);
-    return temperatureSetRight;
+  private async getTargetTemperatureLeft(): Promise<CharacteristicValue> {
+    return this.getTargetTemperature('left');
   }
 
-  private async setTemperatureSetRight(value: CharacteristicValue) {
-    const temperature = value as number;
+  private async getTargetTemperatureRight(): Promise<CharacteristicValue> {
+    return this.getTargetTemperature('right');
+  }
 
-    this.log.debug('Set TemperatureSetRight:', temperature);
-    await this.service.setTemperature(this.device, temperature, 'right');
+  private async setTargetTemperatureLeft(value: CharacteristicValue) {
+    return this.setTargetTemperature(value, 'left');
+  }
+
+  private async setTargetTemperatureRight(value: CharacteristicValue) {
+    return this.setTargetTemperature(value, 'right');
   }
 }
