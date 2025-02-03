@@ -17,6 +17,15 @@ export class NavienDevice {
     return this.Properties.nickName.mainItem;
   }
 
+  get nicknames() {
+    const { mainItem, side } = this.Properties.nickName;
+    return {
+      main: mainItem,
+      left: side?.left,
+      right: side?.right,
+    };
+  }
+
   get isDouble() {
     /*
      * XXX(junbongwe): There is no explicit field or way to query whether a device is double or single.

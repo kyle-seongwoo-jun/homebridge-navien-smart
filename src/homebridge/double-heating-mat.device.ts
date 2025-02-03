@@ -47,7 +47,7 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
       || this.accessory.addService(Switch);
 
     // name
-    const name = this.displayName?.mainSwitch || this.device.name + ' Power';
+    const name = this.displayName?.mainSwitch || this.device.nicknames.main;
     mainSwitch.addOptionalCharacteristic(ConfiguredName);
     mainSwitch.setCharacteristic(ConfiguredName, name);
 
@@ -86,8 +86,8 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
       || this.accessory.addService(HeaterCooler, serviceNameRight, 'RIGHT');
 
     // name
-    const nameLeft = this.displayName?.left || this.device.name + ' Left';
-    const nameRight = this.displayName?.right || this.device.name + ' Right';
+    const nameLeft = this.displayName?.left || this.device.nicknames.left!;
+    const nameRight = this.displayName?.right || this.device.nicknames.right!;
     heaterLeft.addOptionalCharacteristic(ConfiguredName);
     heaterLeft.setCharacteristic(ConfiguredName, nameLeft);
     heaterRight.addOptionalCharacteristic(ConfiguredName);
@@ -216,8 +216,8 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
       || this.accessory.addService(Thermostat, serviceNameRight, 'RIGHT');
 
     // name
-    const nameLeft = this.displayName?.left || this.device.name + ' Left';
-    const nameRight = this.displayName?.right || this.device.name + ' Right';
+    const nameLeft = this.displayName?.left || this.device.nicknames.left!;
+    const nameRight = this.displayName?.right || this.device.nicknames.right!;
     thermostatLeft.addOptionalCharacteristic(ConfiguredName);
     thermostatLeft.setCharacteristic(ConfiguredName, nameLeft);
     thermostatRight.addOptionalCharacteristic(ConfiguredName);
