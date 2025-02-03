@@ -1,12 +1,13 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
+import { HeatingZone } from '../navien/interfaces/index.js';
 import { NavienDevice } from '../navien/navien.device.js';
 import { NavienDeviceStatusRepository } from '../navien/navien.device-status.js';
 import { NavienService } from '../navien/navien.service.js';
 import { DisplayName, NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform.js';
 
 export abstract class HeatingMat {
-  protected readonly accessoryType: string;
+  protected readonly accessoryType: 'HeaterCooler' | 'Thermostat';
   protected readonly service: NavienService;
   protected readonly device: NavienDevice;
   protected readonly deviceStatus: NavienDeviceStatusRepository;
@@ -152,7 +153,6 @@ export abstract class HeatingMat {
     }
 
     this.log.debug('Get TemperatureCurrent:', temperatureCurrent);
-
     return temperatureCurrent;
   }
 
@@ -171,7 +171,6 @@ export abstract class HeatingMat {
     }
 
     this.log.debug('Get TemperatureCurrentRight:', temperatureCurrentRight);
-
     return temperatureCurrentRight;
   }
 
@@ -186,7 +185,6 @@ export abstract class HeatingMat {
     }
 
     this.log.debug('Get Locked:', isLocked);
-
     return isLocked;
   }
 
@@ -194,8 +192,7 @@ export abstract class HeatingMat {
   private async setLocked(value: CharacteristicValue) {
     const isLocked = !!value;
 
-    this.log.info('Set Locked:', isLocked);
-
+    this.log.debug('Set Locked:', isLocked);
     await this.service.lock(this.device, isLocked);
   }
 }

@@ -27,8 +27,6 @@ export class DoubleHeatingMat extends HeatingMat {
       case 'Thermostat':
         [this.thermostatLeft, this.thermostatRight] = this.initializeThermostat();
         break;
-      default:
-        throw new Error(`Invalid accessory type: ${this.accessoryType}`);
     }
   }
 
@@ -330,7 +328,6 @@ export class DoubleHeatingMat extends HeatingMat {
     }
 
     this.log.debug('Get PowerOn:', isPowerOn ? 'ON' : 'OFF');
-
     return isPowerOn;
   }
 
@@ -338,8 +335,7 @@ export class DoubleHeatingMat extends HeatingMat {
     const state = value as number;
     const isPowerOn = !!state;
 
-    this.log.info('Set PowerOn:', isPowerOn ? 'ON' : 'OFF');
-
+    this.log.debug('Set PowerOn:', isPowerOn ? 'ON' : 'OFF');
     await this.service.activate(this.device, isPowerOn);
   }
 
@@ -362,8 +358,6 @@ export class DoubleHeatingMat extends HeatingMat {
         return isPowerOn && isLeftEnabled ?
           Characteristic.CurrentHeatingCoolingState.HEAT :
           Characteristic.CurrentHeatingCoolingState.OFF;
-      default:
-        throw new Error(`Invalid accessory type: ${this.accessoryType}`);
     }
   }
 
@@ -378,7 +372,7 @@ export class DoubleHeatingMat extends HeatingMat {
       },
     } = this.platform;
 
-    this.log.info('Set Left Running:', isEnable ? 'ON' : 'OFF');
+    this.log.debug('Set Left Running:', isEnable ? 'ON' : 'OFF');
 
     if (isEnable && !isPowerOn && isLeftEnabled) {
       await this.service.activate(this.device, true);
@@ -412,8 +406,6 @@ export class DoubleHeatingMat extends HeatingMat {
         return isPowerOn && isRightEnabled ?
           Characteristic.CurrentHeatingCoolingState.HEAT :
           Characteristic.CurrentHeatingCoolingState.OFF;
-      default:
-        throw new Error(`Invalid accessory type: ${this.accessoryType}`);
     }
   }
 
@@ -428,7 +420,7 @@ export class DoubleHeatingMat extends HeatingMat {
       },
     } = this.platform;
 
-    this.log.info('Set Right Running:', isEnable ? 'ON' : 'OFF');
+    this.log.debug('Set Right Running:', isEnable ? 'ON' : 'OFF');
 
     if (isEnable && !isPowerOn && isRightEnabled) {
       await this.service.activate(this.device, true);
@@ -461,7 +453,6 @@ export class DoubleHeatingMat extends HeatingMat {
       [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
 
     this.log.debug('Get Left Heater State:', state[1]);
-
     return state[0];
   }
 
@@ -483,7 +474,6 @@ export class DoubleHeatingMat extends HeatingMat {
       [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
 
     this.log.debug('Get Right Heater State:', state[1]);
-
     return state[0];
   }
 
@@ -497,15 +487,13 @@ export class DoubleHeatingMat extends HeatingMat {
     }
 
     this.log.debug('Get TemperatureSet:', temperatureSet);
-
     return temperatureSet;
   }
 
   private async setTemperatureSet(value: CharacteristicValue) {
     const temperature = value as number;
 
-    this.log.info('Set TemperatureSet:', temperature);
-
+    this.log.debug('Set TemperatureSet:', temperature);
     await this.service.setTemperature(this.device, temperature, 'left');
   }
 
@@ -519,15 +507,13 @@ export class DoubleHeatingMat extends HeatingMat {
     }
 
     this.log.debug('Get TemperatureSetRight:', temperatureSetRight);
-
     return temperatureSetRight;
   }
 
   private async setTemperatureSetRight(value: CharacteristicValue) {
     const temperature = value as number;
 
-    this.log.info('Set TemperatureSetRight:', temperature);
-
+    this.log.debug('Set TemperatureSetRight:', temperature);
     await this.service.setTemperature(this.device, temperature, 'right');
   }
 }

@@ -176,7 +176,7 @@ export class NavienService {
   }
 
   public async setTemperature(device: NavienDevice, temperature: number, zone?: HeatingZone) {
-    this.log.info('Setting temperature to', temperature, 'for device', device.name, 'zone', zone);
+    this.log.info(`Setting temperature to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
 
     // if zone is provided, set temperature for the specified zone
     // otherwise set temperature for both zones
@@ -194,9 +194,9 @@ export class NavienService {
     });
 
     if (success) {
-      this.log.info('Temperature set to', temperature, 'for device', device.name, 'zone', zone);
+      this.log.info(`Temperature set to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
     } else {
-      this.log.error('Failed to set temperature to', temperature, 'for device', device.name, 'zone', zone);
+      this.log.error(`Failed to set temperature to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
     }
   }
 

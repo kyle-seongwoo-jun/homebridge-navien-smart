@@ -155,20 +155,18 @@ export class NavienDeviceStatusRepository {
         this.isPowerOn = (state.operationMode === OperationMode.ON);
       }
 
-      // updated status
-      this.log.debug(
-        '[AWS PubSub] current status:', {
-          name: this.device.name,
-          isPowerOn: this.isPowerOn,
-          isLeftEnabled: this.isLeftEnabled,
-          isRightEnabled: this.isRightEnabled,
-          temperatureCurrent: this.temperatureCurrent,
-          temperatureSet: this.temperatureSet,
-          temperatureRightCurrent: this.temperatureCurrentRight,
-          temperatureRightSet: this.temperatureSetRight,
-          isLocked: this.isLocked,
-        },
-      );
+      // log current status
+      this.log.debug('[AWS PubSub] current status:', {
+        name: this.device.name,
+        isPowerOn: this.isPowerOn,
+        isLeftEnabled: this.isLeftEnabled,
+        isRightEnabled: this.isRightEnabled,
+        temperatureCurrent: this.temperatureCurrent,
+        temperatureSet: this.temperatureSet,
+        temperatureRightCurrent: this.temperatureCurrentRight,
+        temperatureRightSet: this.temperatureSetRight,
+        isLocked: this.isLocked,
+      });
     });
   }
 

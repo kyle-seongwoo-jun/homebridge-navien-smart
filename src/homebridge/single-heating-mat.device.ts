@@ -21,8 +21,6 @@ export class SingleHeatingMat extends HeatingMat {
       case 'Thermostat':
         this.thermostat = this.initializeThermostat();
         break;
-      default:
-        throw new Error(`Invalid accessory type: ${this.accessoryType}`);
     }
   }
 
@@ -169,8 +167,9 @@ export class SingleHeatingMat extends HeatingMat {
     }
 
     this.log.debug('Get Active:', isPowerOn ? 'ACTIVE' : 'INACTIVE');
-
-    return isPowerOn ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
+    return isPowerOn ?
+      Characteristic.Active.ACTIVE :
+      Characteristic.Active.INACTIVE;
   }
 
   // Only used for HeaterCooler Service
@@ -178,8 +177,7 @@ export class SingleHeatingMat extends HeatingMat {
     const state = value as number;
     const isPowerOn = !!state;
 
-    this.log.info('Set Active:', isPowerOn ? 'ACTIVE' : 'INACTIVE');
-
+    this.log.debug('Set Active:', isPowerOn ? 'ACTIVE' : 'INACTIVE');
     await this.service.activate(this.device, isPowerOn);
   }
 
@@ -204,7 +202,6 @@ export class SingleHeatingMat extends HeatingMat {
     })();
 
     this.log.debug('Get Heater State:', state[1]);
-
     return state[0];
   }
 
@@ -220,8 +217,9 @@ export class SingleHeatingMat extends HeatingMat {
     }
 
     this.log.debug('Get Heating State:', isPowerOn ? 'HEAT' : 'OFF');
-
-    return isPowerOn ? Characteristic.CurrentHeatingCoolingState.HEAT : Characteristic.CurrentHeatingCoolingState.OFF;
+    return isPowerOn ?
+      Characteristic.CurrentHeatingCoolingState.HEAT :
+      Characteristic.CurrentHeatingCoolingState.OFF;
   }
 
   // Only used for Thermostat Service
@@ -229,8 +227,7 @@ export class SingleHeatingMat extends HeatingMat {
     const state = value as number;
     const isPowerOn = !!state;
 
-    this.log.info('Set Heating State:', isPowerOn ? 'HEAT' : 'OFF');
-
+    this.log.debug('Set Heating State:', isPowerOn ? 'HEAT' : 'OFF');
     await this.service.activate(this.device, isPowerOn);
   }
 
@@ -244,15 +241,13 @@ export class SingleHeatingMat extends HeatingMat {
     }
 
     this.log.debug('Get TemperatureSet:', temperatureSet);
-
     return temperatureSet;
   }
 
   private async setTemperatureSet(value: CharacteristicValue) {
     const temperature = value as number;
 
-    this.log.info('Set TemperatureSet:', temperature);
-
+    this.log.debug('Set TemperatureSet:', temperature);
     await this.service.setTemperature(this.device, temperature);
   }
 }
