@@ -1,8 +1,7 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 import path from 'path';
 
-import { DoubleHeatingMat } from './homebridge/double-heating-mat.device.js';
-import { SingleHeatingMat } from './homebridge/single-heating-mat.device.js';
+import { HeatingMatFactory } from './homebridge/heating-mat.factory.js';
 import { NavienException } from './navien/exceptions/index.js';
 import { NavienApi } from './navien/navien.api.js';
 import { NavienAuth } from './navien/navien.auth.js';
@@ -176,11 +175,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the restored accessory
       // this is imported from `platformAccessory.ts`
-      if (isDoubleHeatingMat) {
-        new DoubleHeatingMat(this, existingAccessory);
-      } else {
-        new SingleHeatingMat(this, existingAccessory);
-      }
+      HeatingMatFactory.create(this, existingAccessory);
 
       // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
       // remove platform accessories when no longer present
@@ -199,11 +194,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the newly create accessory
       // this is imported from `platformAccessory.ts`
-      if (isDoubleHeatingMat) {
-        new DoubleHeatingMat(this, accessory);
-      } else {
-        new SingleHeatingMat(this, accessory);
-      }
+      HeatingMatFactory.create(this, accessory);
 
       // link the accessory to your platform
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);

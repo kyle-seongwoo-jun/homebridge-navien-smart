@@ -5,7 +5,7 @@ import { NavienDeviceStatusRepository } from '../navien/navien.device-status.js'
 import { NavienService } from '../navien/navien.service.js';
 import { DisplayName, NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform.js';
 
-export abstract class AbstractHeatingMat {
+export abstract class HeatingMat {
   protected readonly accessoryType: string;
   protected readonly service: NavienService;
   protected readonly device: NavienDevice;

@@ -1,9 +1,9 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
 import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform.js';
-import { AbstractHeatingMat } from './abstract-heating-mat.device.js';
+import { HeatingMat } from './heating-mat.device.js';
 
-export class SingleHeatingMat extends AbstractHeatingMat {
+export class SingleHeatingMat extends HeatingMat {
   private readonly heater?: Service;
   private readonly thermostat?: Service;
 
