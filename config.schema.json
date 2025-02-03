@@ -6,100 +6,136 @@
     "type": "object",
     "properties": {
       "authMode": {
-        "title": "Auth Mode",
+        "title": "Auth Mode / 로그인 방법",
         "type": "string",
         "default": "account",
         "oneOf": [
           {
-            "title": "Navien Smart Account",
-            "enum": [ "account" ]
+            "title": "Navien Account / 나비엔 계정",
+            "enum": [
+              "account"
+            ]
           },
           {
-            "title": "Token",
-            "enum": [ "token" ]
+            "title": "Token / 토큰 로그인",
+            "enum": [
+              "token"
+            ]
           }
         ],
-        "required": true
+        "required": true,
+        "description": "로그인 방법을 선택해주세요. ⚠️ 현재 간편 로그인(네이버, 카카오톡, 애플)은 지원하지 않습니다."
+      },
+      "help_1": {
+        "x-schema-form": {
+          "type": "help",
+          "helpvalue": "<p class='help-block'>CLI를 이용한 토큰 발급 방법은 <a href='https://github.com/kyle-seongwoo-jun/homebridge-navien-smart#cli-usage' target='_blank'>이 문서</a>를 참고해주세요.</p>"
+        },
+        "condition": {
+          "functionBody": "return model.authMode === 'token';"
+        }
       },
       "username": {
-        "title": "Username",
-        "type": "string"
+        "title": "Username / 아이디",
+        "type": "string",
+        "required": true,
+        "description": "나비엔 계정의 아이디를 입력해주세요."
       },
       "password": {
-        "title": "Password",
+        "title": "Password / 비밀번호",
         "type": "string",
+        "x-schema-form": {
+          "type": "password"
+        },
         "condition": {
           "functionBody": "return model.authMode === 'account';"
-        }
+        },
+        "description": "나비엔 계정의 비밀번호를 입력해주세요."
       },
       "refreshToken": {
         "title": "Refresh Token",
         "type": "string",
         "condition": {
           "functionBody": "return model.authMode === 'token';"
-        }
+        },
+        "description": "CLI에서 출력한 <code>refreshToken</code> 을 입력해주세요."
       },
       "accountSeq": {
         "title": "Account Seq",
         "type": "number",
         "condition": {
           "functionBody": "return model.authMode === 'token';"
-        }
+        },
+        "description": "CLI에서 출력한 <code>accountSeq</code> 을 입력해주세요."
       },
       "accessoryType": {
-        "title": "Accessory Type",
+        "title": "Accessory Type / 액세서리 타입",
         "type": "string",
         "default": "HeaterCooler",
         "oneOf": [
           {
-            "title": "Heater",
-            "enum": [ "HeaterCooler" ]
+            "title": "Heater / 히터",
+            "enum": [
+              "HeaterCooler"
+            ]
           },
           {
-            "title": "Thermostat",
-            "enum": [ "Thermostat" ]
+            "title": "Thermostat / 온도 조절기",
+            "enum": [
+              "Thermostat"
+            ]
           }
         ],
-        "required": true
+        "required": true,
+        "description": "애플 홈에서 보여질 액세서리 타입을 선택해주세요."
       },
       "soundEnabled": {
-        "title": "Enable Sound on Operation",
+        "title": "Enable Sound on Operation / 조작 시 알림 소리 활성화",
         "type": "boolean",
-        "default": false
+        "default": false,
+        "description": "선택한 경우, 조작 시 알림 소리를 활성화합니다. (지원하는 기기에 한함)"
       },
       "separateControl": {
-        "title": "Separate Control",
+        "title": "Separate Control / 좌우 분리난방",
         "type": "boolean",
-        "default": false
+        "default": false,
+        "description": "선택한 경우, 좌우 분리난방을 지원합니다. (지원하는 기기에 한함)"
       },
       "displayName": {
-        "title": "Display Name",
+        "title": "Display Name / 애플 홈 상 이름",
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
             "device": {
-              "title": "Device Name in Navien Smart App",
-              "type": "string"
+              "title": "Device Name in Navien Smart App / 나비엔 스마트 앱에서의 기기 이름",
+              "type": "string",
+              "description": "설정하고자 하는 기기의 나비엔 스마트 앱 상의 이름을 입력해주세요. (예: 카본 매트)"
             },
             "mainSwitch": {
-              "title": "Main Switch Name",
-              "type": "string"
+              "title": "Main Switch Name / 전원 스위치 이름",
+              "type": "string",
+              "description": "애플 홈에서 보여줄 전원 스위치의 이름을 입력해주세요. (예: 카본 매트 전원)"
             },
             "left": {
-              "title": "Left Controller Name",
-              "type": "string"
+              "title": "Left Controller Name / 좌측 난방 이름",
+              "type": "string",
+              "description": "애플 홈에서 보여줄 좌측 난방의 이름을 입력해주세요. (예: 카본 매트 왼쪽 난방)"
             },
             "right": {
-              "title": "Right Controller Name",
-              "type": "string"
+              "title": "Right Controller Name / 우측 난방 이름",
+              "type": "string",
+              "description": "애플 홈에서 보여줄 우측 난방의 이름을 입력해주세요. (예: 카본 매트 오른쪽 난방)"
             }
           },
-          "required": [ "device" ]
+          "required": [
+            "device"
+          ]
         },
         "condition": {
           "functionBody": "return model.separateControl;"
-        }
+        },
+        "description": "분리난방의 경우, 애플 홈에서 3개의 액세서리가 생깁니다. 여기서 액세서리 별 이름을 설정할 수 있습니다. 미설정 시, 나비엔 스마트 앱 상의 이름을 사용합니다."
       }
     }
   }

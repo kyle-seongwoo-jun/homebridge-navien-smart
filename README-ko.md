@@ -75,9 +75,9 @@ npm i -g homebridge-navien-smart
 | `refreshToken` | `authMode`가 `token`인 경우 필수. `navien` CLI로 얻을 수 있습니다. |
 | `accountSeq` | `authMode`가 `token`인 경우 필수. `navien` CLI로 얻을 수 있습니다. |
 | `accessoryType` | 필수. `HeaterCooler`와 `Thermostat` 중 하나를 선택할 수 있습니다. |
-| `soundEnabled` | 선택한 경우 조작시 알림소리를 활성화합니다(지원하는 기기에 한함). |
-| `separateControl` | 선택한 경우 좌우 분리난방을 지원합니다(지원하는 기기에 한함). |
-| `displayName` | 홈에서 표시되는 이름을 설정합니다. `device` 필드는 Navien Smart 앱에서 등록된 기기 이름과 동일한 값으로 설정해야 합니다. |
+| `soundEnabled` | 선택한 경우, 조작 시 알림 소리를 활성화합니다. (지원하는 기기에 한함) |
+| `separateControl` | 선택한 경우, 좌우 분리난방을 지원합니다. (지원하는 기기에 한함) |
+| `displayName` | 애플 홈에서 표시되는 이름을 설정합니다. `device` 필드는 Navien Smart 앱에서 등록된 기기 이름과 동일한 값으로 설정해야 합니다. |
 | `platform` | 항상 `NavienSmart` |
 
 비밀번호를 설정 파일에 넣고 싶지 않은 경우 `authMode`를 `token`으로 설정하고 대신 `refreshToken`과 `accountSeq`를 사용할 수 있습니다.
