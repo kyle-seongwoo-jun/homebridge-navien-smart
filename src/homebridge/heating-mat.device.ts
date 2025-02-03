@@ -137,6 +137,30 @@ export abstract class HeatingMat {
       });
   }
 
+  protected async getPower(): Promise<CharacteristicValue> {
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
+    const { isConnected, isPowerOn } = this.deviceStatus;
+
+    if (!isConnected) {
+      this.log.info('Get Power: not responding');
+      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+
+    this.log.debug('Get Power:', isPowerOn ? 'ON' : 'OFF');
+    // boolean automatically converted to 0 | 1
+    // Active.INACTIVE | Active.ACTIVE
+    // TargetHeatingCoolingState.OFF | TargetHeatingCoolingState.HEAT
+    // CurrentHeatingCoolingState.OFF | CurrentHeatingCoolingState.HEAT
+    return isPowerOn;
+  }
+
+  protected async setPower(value: CharacteristicValue /* 0 | 1 | boolean */) {
+    const isPowerOn = !!value;
+
+    this.log.debug('Set Power:', isPowerOn ? 'ON' : 'OFF');
+    await this.service.activate(this.device, isPowerOn);
+  }
+
   /**
    * Get current temperature of the specified zone.
    * If device is not supporting current temperature, it will return target temperature.
@@ -192,6 +216,7 @@ export abstract class HeatingMat {
 
   // Only used for HeaterCooler Service
   private async getLocked(): Promise<CharacteristicValue> {
+    const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, isLocked } = this.deviceStatus;
 
@@ -201,11 +226,13 @@ export abstract class HeatingMat {
     }
 
     this.log.debug('Get Locked:', isLocked);
-    return isLocked;
+    return isLocked ?
+      Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED :
+      Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED;
   }
 
   // Only used for HeaterCooler Service
-  private async setLocked(value: CharacteristicValue) {
+  private async setLocked(value: CharacteristicValue /* 0 | 1 */) {
     const isLocked = !!value;
 
     this.log.debug('Set Locked:', isLocked);

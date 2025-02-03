@@ -50,8 +50,8 @@ export class DoubleHeatingMat extends HeatingMat {
     mainSwitch.setCharacteristic(ConfiguredName, name);
 
     mainSwitch.getCharacteristic(On)
-      .onGet(this.getPowerOn.bind(this))
-      .onSet(this.setPowerOn.bind(this));
+      .onGet(this.getPower.bind(this))
+      .onSet(this.setPower.bind(this));
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
@@ -316,27 +316,6 @@ export class DoubleHeatingMat extends HeatingMat {
     });
 
     return [thermostatLeft, thermostatRight];
-  }
-
-  private async getPowerOn(): Promise<CharacteristicValue> {
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get PowerOn: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get PowerOn:', isPowerOn ? 'ON' : 'OFF');
-    return isPowerOn;
-  }
-
-  private async setPowerOn(value: CharacteristicValue) {
-    const state = value as number;
-    const isPowerOn = !!state;
-
-    this.log.debug('Set PowerOn:', isPowerOn ? 'ON' : 'OFF');
-    await this.service.activate(this.device, isPowerOn);
   }
 
   private async getRunningLeft(): Promise<CharacteristicValue> {

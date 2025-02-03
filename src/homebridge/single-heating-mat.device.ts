@@ -46,10 +46,10 @@ export class SingleHeatingMat extends HeatingMat {
     heater.setCharacteristic(Name, this.device.name);
     this.initializeHeaterBase(heater);
 
-    // active state
+    // power
     heater.getCharacteristic(Active)
-      .onGet(this.getActive.bind(this))
-      .onSet(this.setActive.bind(this));
+      .onGet(this.getPower.bind(this))
+      .onSet(this.setPower.bind(this));
 
     // current state
     heater.getCharacteristic(CurrentHeaterCoolerState)
@@ -116,14 +116,13 @@ export class SingleHeatingMat extends HeatingMat {
     thermostat.setCharacteristic(Name, this.device.name);
     this.initializeThermostatBase(thermostat);
 
-    // current state
+    // power
     thermostat.getCharacteristic(CurrentHeatingCoolingState)
-      .onGet(this.getHeatingState.bind(this));
+      .onGet(this.getPower.bind(this));
 
-    // target state
     thermostat.getCharacteristic(TargetHeatingCoolingState)
-      .onGet(this.getHeatingState.bind(this))
-      .onSet(this.setHeatingState.bind(this));
+      .onGet(this.getPower.bind(this))
+      .onSet(this.setPower.bind(this));
 
     // current temperature
     thermostat.getCharacteristic(CurrentTemperature)
@@ -156,32 +155,6 @@ export class SingleHeatingMat extends HeatingMat {
   }
 
   // Only used for HeaterCooler Service
-  private async getActive(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Active: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get Active:', isPowerOn ? 'ACTIVE' : 'INACTIVE');
-    return isPowerOn ?
-      Characteristic.Active.ACTIVE :
-      Characteristic.Active.INACTIVE;
-  }
-
-  // Only used for HeaterCooler Service
-  private async setActive(value: CharacteristicValue) {
-    const state = value as number;
-    const isPowerOn = !!state;
-
-    this.log.debug('Set Active:', isPowerOn ? 'ACTIVE' : 'INACTIVE');
-    await this.service.activate(this.device, isPowerOn);
-  }
-
-  // Only used for HeaterCooler Service
   private async getHeaterState(): Promise<CharacteristicValue> {
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
@@ -203,31 +176,5 @@ export class SingleHeatingMat extends HeatingMat {
 
     this.log.debug('Get Heater State:', state[1]);
     return state[0];
-  }
-
-  // Only used for Thermostat Service
-  private async getHeatingState(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Heating State: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get Heating State:', isPowerOn ? 'HEAT' : 'OFF');
-    return isPowerOn ?
-      Characteristic.CurrentHeatingCoolingState.HEAT :
-      Characteristic.CurrentHeatingCoolingState.OFF;
-  }
-
-  // Only used for Thermostat Service
-  private async setHeatingState(value: CharacteristicValue) {
-    const state = value as number;
-    const isPowerOn = !!state;
-
-    this.log.debug('Set Heating State:', isPowerOn ? 'HEAT' : 'OFF');
-    await this.service.activate(this.device, isPowerOn);
   }
 }
