@@ -5,14 +5,12 @@ import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 import { HeaterItemState, OperationMode } from '../aws/interfaces/index.js';
 import { API_URL } from './constants.js';
 import { ApiException } from './exceptions/api.exception.js';
-import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces/index.js';
+import { CommonResponse, Device, DevicesResponse, HeatingZone, ResponseCode } from './interfaces/index.js';
 import { NavienSession } from './navien.session.js';
 import { NavienSessionManager } from './navien.session-manager.js';
 import { NavienUser } from './navien.user.js';
 
 type RequestMethods = 'GET' | 'POST';
-
-export type HeatingZone = 'single' | 'left' | 'right';
 
 type TemperatureParam = {
   enable: boolean;
