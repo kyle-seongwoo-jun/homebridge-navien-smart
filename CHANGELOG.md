@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.8.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.6...v1.8.0) (2025-02-03)
+
+
+### Features
+
+* add option for notification sound on operation ([6554f17](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/6554f17db14d7385a4fd24153ba02663d635adc8))
+* add separateControl config ([4b73561](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/4b73561a2c22ceb2527d55e7b1d65463537470fa))
+* support separate control & current temperature ([4b73561](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/4b73561a2c22ceb2527d55e7b1d65463537470fa))
+
+
+### Bug Fixes
+
+* add config migration to support old version ([c906dc0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/c906dc0f22e3b50700bba7a3871757e39546e0cd))
+* handle config change for accessoryType & separateControl ([23424f4](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/23424f4c70a2d9b006bf110ee956ed4aa8c82ca4))
+
 ## [1.7.6](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.5...v1.7.6) (2025-01-15)
 
 
