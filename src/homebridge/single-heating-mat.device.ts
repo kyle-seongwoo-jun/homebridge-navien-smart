@@ -68,15 +68,15 @@ export class SingleHeatingMat extends HeatingMat {
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
       heater.updateCharacteristic(Active, isPowerOn ? Active.ACTIVE : Active.INACTIVE);
     });
-    this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
+    this.deviceStatus.currentTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isIdle } = this.deviceStatus;
-      heater.updateCharacteristic(CurrentTemperature, temperatureCurrent);
+      heater.updateCharacteristic(CurrentTemperature, temperature);
       // We may need to update CurrentHeaterCoolerState since isIdle may have changed
       heater.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn, isIdle));
     });
-    this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
+    this.deviceStatus.targetTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isIdle } = this.deviceStatus;
-      heater.updateCharacteristic(HeatingThresholdTemperature, temperatureSet);
+      heater.updateCharacteristic(HeatingThresholdTemperature, temperature);
       // We may need to update CurrentHeaterCoolerState since isIdle may have changed
       heater.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn, isIdle));
     });
@@ -136,11 +136,11 @@ export class SingleHeatingMat extends HeatingMat {
         isPowerOn ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
       );
     });
-    this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
-      thermostat.updateCharacteristic(CurrentTemperature, temperatureCurrent);
+    this.deviceStatus.currentTemperatureChanges.subscribe((temperature: number) => {
+      thermostat.updateCharacteristic(CurrentTemperature, temperature);
     });
-    this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
-      thermostat.updateCharacteristic(TargetTemperature, temperatureSet);
+    this.deviceStatus.targetTemperatureChanges.subscribe((temperature: number) => {
+      thermostat.updateCharacteristic(TargetTemperature, temperature);
     });
 
     return thermostat;

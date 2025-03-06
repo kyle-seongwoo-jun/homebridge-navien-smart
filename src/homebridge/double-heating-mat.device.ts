@@ -124,22 +124,22 @@ export class DoubleHeatingMat extends HeatingMat {
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
-      const { isLeftEnabled, isRightEnabled, isIdle, isRightIdle } = this.deviceStatus;
+      const { isLeftEnabled, isRightEnabled, isLeftIdle, isRightIdle } = this.deviceStatus;
       const isLeftRunning = isPowerOn && isLeftEnabled;
       const isRightRunning = isPowerOn && isRightEnabled;
 
       heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
       heaterRight.updateCharacteristic(Active, isRightRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isIdle));
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isLeftIdle));
       heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isRightRunning, isRightIdle));
     });
 
     this.deviceStatus.isLeftEnabledChanges.subscribe((isLeftEnabled: boolean) => {
-      const { isPowerOn, isIdle } = this.deviceStatus;
+      const { isPowerOn, isLeftIdle } = this.deviceStatus;
       const isLeftRunning = isPowerOn && isLeftEnabled;
 
       heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isIdle));
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isLeftIdle));
     });
     this.deviceStatus.isRightEnabledChanges.subscribe((isRightEnabled: boolean) => {
       const { isPowerOn, isRightIdle } = this.deviceStatus;
@@ -149,30 +149,30 @@ export class DoubleHeatingMat extends HeatingMat {
       heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isRightRunning, isRightIdle));
     });
 
-    this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
-      const { isPowerOn, isLeftEnabled, isIdle } = this.deviceStatus;
+    this.deviceStatus.leftCurrentTemperatureChanges.subscribe((temperature: number) => {
+      const { isPowerOn, isLeftEnabled, isLeftIdle } = this.deviceStatus;
 
-      heaterLeft.updateCharacteristic(CurrentTemperature, temperatureCurrent);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isIdle));
+      heaterLeft.updateCharacteristic(CurrentTemperature, temperature);
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isLeftIdle));
     });
-    this.deviceStatus.temperatureCurrentRightChanges.subscribe((temperatureRightCurrent: number) => {
+    this.deviceStatus.rightCurrentTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
 
-      heaterRight.updateCharacteristic(CurrentTemperature, temperatureRightCurrent);
+      heaterRight.updateCharacteristic(CurrentTemperature, temperature);
       heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
     });
 
-    this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
-      const { isPowerOn, isLeftEnabled, isIdle } = this.deviceStatus;
+    this.deviceStatus.leftTargetTemperatureChanges.subscribe((temperature: number) => {
+      const { isPowerOn, isLeftEnabled, isLeftIdle } = this.deviceStatus;
 
-      heaterLeft.updateCharacteristic(HeatingThresholdTemperature, temperatureSet);
-      // We may need to update CurrentHeaterCoolerState since isIdle may have changed
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isIdle));
+      heaterLeft.updateCharacteristic(HeatingThresholdTemperature, temperature);
+      // We may need to update CurrentHeaterCoolerState since isLeftIdle may have changed
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isLeftIdle));
     });
-    this.deviceStatus.temperatureSetRightChanges.subscribe((temperatureRightSet: number) => {
+    this.deviceStatus.rightTargetTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
 
-      heaterRight.updateCharacteristic(HeatingThresholdTemperature, temperatureRightSet);
+      heaterRight.updateCharacteristic(HeatingThresholdTemperature, temperature);
       // We may need to update CurrentHeaterCoolerState since isRightIdle may have changed
       heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
     });
@@ -293,18 +293,18 @@ export class DoubleHeatingMat extends HeatingMat {
       );
     });
 
-    this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
-      thermostatLeft.updateCharacteristic(CurrentTemperature, temperatureCurrent);
+    this.deviceStatus.leftCurrentTemperatureChanges.subscribe((temperature: number) => {
+      thermostatLeft.updateCharacteristic(CurrentTemperature, temperature);
     });
-    this.deviceStatus.temperatureCurrentRightChanges.subscribe((temperatureCurrentRight: number) => {
-      thermostatRight.updateCharacteristic(CurrentTemperature, temperatureCurrentRight);
+    this.deviceStatus.rightCurrentTemperatureChanges.subscribe((temperature: number) => {
+      thermostatRight.updateCharacteristic(CurrentTemperature, temperature);
     });
 
-    this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
-      thermostatLeft.updateCharacteristic(TargetTemperature, temperatureSet);
+    this.deviceStatus.leftTargetTemperatureChanges.subscribe((temperature: number) => {
+      thermostatLeft.updateCharacteristic(TargetTemperature, temperature);
     });
-    this.deviceStatus.temperatureSetRightChanges.subscribe((temperatureSetRight: number) => {
-      thermostatRight.updateCharacteristic(TargetTemperature, temperatureSetRight);
+    this.deviceStatus.rightTargetTemperatureChanges.subscribe((temperature: number) => {
+      thermostatRight.updateCharacteristic(TargetTemperature, temperature);
     });
 
     return [thermostatLeft, thermostatRight];

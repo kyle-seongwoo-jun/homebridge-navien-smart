@@ -9,12 +9,12 @@ import { NavienDevice } from './navien.device.js';
 interface NavienDeviceStatus {
   isConnected: boolean;
   isPowerOn?: boolean;
-  isLeftEnabled?: boolean;
-  isRightEnabled?: boolean;
-  temperatureCurrent?: number;
-  temperatureSet?: number;
-  temperatureCurrentRight?: number;
-  temperatureSetRight?: number;
+  isEnabled?: boolean;
+  isEnabled2?: boolean;
+  currentTemperature?: number;
+  targetTemperature?: number;
+  currentTemperature2?: number;
+  targetTemperature2?: number;
   isLocked?: boolean;
 }
 
@@ -42,19 +42,19 @@ class NavienDeviceStatusParser {
       if (this.isDouble) {
         const { left, right } = heater as DoubleHeaterState;
 
-        status.isLeftEnabled = left?.enable;
-        status.temperatureCurrent = left?.temperature?.current;
-        status.temperatureSet = left?.temperature?.set;
+        status.isEnabled = left?.enable;
+        status.currentTemperature = left?.temperature?.current;
+        status.targetTemperature = left?.temperature?.set;
 
-        status.isRightEnabled = right?.enable;
-        status.temperatureCurrentRight = right?.temperature?.current;
-        status.temperatureSetRight = right?.temperature?.set;
+        status.isEnabled2 = right?.enable;
+        status.currentTemperature2 = right?.temperature?.current;
+        status.targetTemperature2 = right?.temperature?.set;
       } else {
         const single = (heater as SingleHeaterState).single;
 
-        status.isLeftEnabled = single?.enable;
-        status.temperatureCurrent = single?.temperature?.current;
-        status.temperatureSet = single?.temperature?.set;
+        status.isEnabled = single?.enable;
+        status.currentTemperature = single?.temperature?.current;
+        status.targetTemperature = single?.temperature?.set;
       }
     }
 
@@ -70,46 +70,46 @@ class NavienDeviceStatusParser {
   // but i don't understand clearly why this logic is needed.
   adjustStatus(
     originalStatus: NavienDeviceStatus,
-    temperatureSet: number,
-    temperatureSetRight: number,
+    targetTemperature: number,
+    targetTemperature2: number,
     heatRange: { min: number; max: number; step: number },
   ): NavienDeviceStatus {
     const status = { ...originalStatus };
 
     // adjust temperatureSet when left is enabled/disabled
-    if (status.isLeftEnabled !== undefined) {
-      if (status.isLeftEnabled) {
-        if (temperatureSet <= heatRange.min) {
-          status.temperatureSet = heatRange.min + heatRange.step;
+    if (status.isEnabled !== undefined) {
+      if (status.isEnabled) {
+        if (targetTemperature <= heatRange.min) {
+          status.targetTemperature = heatRange.min + heatRange.step;
         }
       } else {
-        if (temperatureSet > heatRange.min) {
-          status.temperatureSet = heatRange.min;
+        if (targetTemperature > heatRange.min) {
+          status.targetTemperature = heatRange.min;
         }
       }
     }
 
     // adjust isLeftEnabled when temperatureSet is changed
-    if (status.temperatureSet !== undefined) {
-      status.isLeftEnabled = status.temperatureSet > heatRange.min;
+    if (status.targetTemperature !== undefined) {
+      status.isEnabled = status.targetTemperature > heatRange.min;
     }
 
     // adjust temperatureSetRight when right is enabled/disabled
-    if (status.isRightEnabled !== undefined) {
-      if (status.isRightEnabled) {
-        if (temperatureSetRight <= heatRange.min) {
-          status.temperatureSetRight = heatRange.min + heatRange.step;
+    if (status.isEnabled2 !== undefined) {
+      if (status.isEnabled2) {
+        if (targetTemperature2 <= heatRange.min) {
+          status.targetTemperature2 = heatRange.min + heatRange.step;
         }
       } else {
-        if (temperatureSetRight > heatRange.min) {
-          status.temperatureSetRight = heatRange.min;
+        if (targetTemperature2 > heatRange.min) {
+          status.targetTemperature2 = heatRange.min;
         }
       }
     }
 
     // adjust isRightEnabled when temperatureSetRight is changed
-    if (status.temperatureSetRight !== undefined) {
-      status.isRightEnabled = status.temperatureSetRight > heatRange.min;
+    if (status.targetTemperature2 !== undefined) {
+      status.isEnabled2 = status.targetTemperature2 > heatRange.min;
     }
 
     return status;
@@ -121,21 +121,21 @@ export class NavienDeviceStatusRepository {
 
   private _isConnected: boolean;
   private _isPowerOn: boolean;
-  private _isLeftEnabled: boolean;
-  private _isRightEnabled: boolean;
-  private _temperatureCurrent: number | null;
-  private _temperatureSet: number;
-  private _temperatureCurrentRight: number | null;
-  private _temperatureSetRight: number;
+  private _isEnabled: boolean;
+  private _isEnabled2: boolean;
+  private _currentTemperature: number | null;
+  private _currentTemperature2: number | null;
+  private _targetTemperature: number;
+  private _targetTemperature2: number;
   private _isLocked: boolean;
 
   private readonly isPowerOnSubject: BehaviorSubject<boolean>;
-  private readonly isLeftEnabledSubject: BehaviorSubject<boolean>;
-  private readonly isRightEnabledSubject: BehaviorSubject<boolean>;
-  private readonly temperatureCurrentSubject: BehaviorSubject<number>;
-  private readonly temperatureSetSubject: BehaviorSubject<number>;
-  private readonly temperatureCurrentRightSubject: BehaviorSubject<number>;
-  private readonly temperatureSetRightSubject: BehaviorSubject<number>;
+  private readonly isEnabledSubject: BehaviorSubject<boolean>;
+  private readonly isEnabled2Subject: BehaviorSubject<boolean>;
+  private readonly currentTemperatureSubject: BehaviorSubject<number>;
+  private readonly currentTemperature2Subject: BehaviorSubject<number>;
+  private readonly targetTemperatureSubject: BehaviorSubject<number>;
+  private readonly targetTemperature2Subject: BehaviorSubject<number>;
   private readonly isLockedSubject: BehaviorSubject<boolean>;
   private readonly subscription: Subscription;
 
@@ -153,21 +153,21 @@ export class NavienDeviceStatusRepository {
     // Please refer to the comments in the getter/setter.
     this._isConnected = false;
     this._isPowerOn = false;
-    this._isLeftEnabled = false;
-    this._isRightEnabled = false;
-    this._temperatureCurrent = null;
-    this._temperatureSet = heatRange.min;
-    this._temperatureCurrentRight = null;
-    this._temperatureSetRight = heatRange.min;
+    this._isEnabled = false;
+    this._isEnabled2 = false;
+    this._currentTemperature = null;
+    this._currentTemperature2 = null;
+    this._targetTemperature = heatRange.min;
+    this._targetTemperature2 = heatRange.min;
     this._isLocked = false;
 
     this.isPowerOnSubject = new BehaviorSubject<boolean>(false);
-    this.isLeftEnabledSubject = new BehaviorSubject<boolean>(false);
-    this.isRightEnabledSubject = new BehaviorSubject<boolean>(false);
-    this.temperatureCurrentSubject = new BehaviorSubject<number>(heatRange.min);
-    this.temperatureSetSubject = new BehaviorSubject<number>(heatRange.min);
-    this.temperatureCurrentRightSubject = new BehaviorSubject<number>(heatRange.min);
-    this.temperatureSetRightSubject = new BehaviorSubject<number>(heatRange.min);
+    this.isEnabledSubject = new BehaviorSubject<boolean>(false);
+    this.isEnabled2Subject = new BehaviorSubject<boolean>(false);
+    this.currentTemperatureSubject = new BehaviorSubject<number>(heatRange.min);
+    this.currentTemperature2Subject = new BehaviorSubject<number>(heatRange.min);
+    this.targetTemperatureSubject = new BehaviorSubject<number>(heatRange.min);
+    this.targetTemperature2Subject = new BehaviorSubject<number>(heatRange.min);
     this.isLockedSubject = new BehaviorSubject<boolean>(false);
 
     this.subscription = this.pubsub.deviceStatusChanges(this.device.id).subscribe((event) => {
@@ -176,7 +176,7 @@ export class NavienDeviceStatusRepository {
       // parse status
       const state = event.payload.state.reported!;
       const originalStatus = this.parser.parseStatusFrom(state);
-      const status = this.parser.adjustStatus(originalStatus, this._temperatureSet, this._temperatureSetRight, heatRange);
+      const status = this.parser.adjustStatus(originalStatus, this._targetTemperature, this._targetTemperature2, heatRange);
 
       // log status
       if (!status.isConnected) {
@@ -196,16 +196,16 @@ export class NavienDeviceStatusRepository {
       // update status
       this._isConnected = status.isConnected;
       this.isPowerOn = status.isPowerOn ?? this._isPowerOn;
-      this.isLeftEnabled = status.isLeftEnabled ?? this._isLeftEnabled;
-      this.isRightEnabled = status.isRightEnabled ?? this._isRightEnabled;
-      if (status.temperatureCurrent !== undefined) {
-        this.temperatureCurrent = status.temperatureCurrent;
+      this.isEnabled = status.isEnabled ?? this._isEnabled;
+      this.isRightEnabled = status.isEnabled2 ?? this._isEnabled2;
+      if (status.currentTemperature !== undefined) {
+        this.currentTemperature = status.currentTemperature;
       }
-      if (status.temperatureCurrentRight !== undefined) {
-        this.temperatureCurrentRight = status.temperatureCurrentRight;
+      if (status.currentTemperature2 !== undefined) {
+        this.rightCurrentTemperature = status.currentTemperature2;
       }
-      this.temperatureSet = status.temperatureSet ?? this._temperatureSet;
-      this.temperatureSetRight = status.temperatureSetRight ?? this._temperatureSetRight;
+      this.targetTemperature = status.targetTemperature ?? this._targetTemperature;
+      this.rightTargetTemperature = status.targetTemperature2 ?? this._targetTemperature2;
       this.isLocked = status.isLocked ?? this._isLocked;
     });
   }
@@ -236,14 +236,14 @@ export class NavienDeviceStatusRepository {
   }
 
   /**
-   * isConnected: true when the device is connected to the AWS IoT Service
+   * Returns true when the device is connected to the AWS IoT Service
    */
   get isConnected() {
     return this._isConnected;
   }
 
   /**
-   * isPowerOn: true when the device is powered on(operationMode is ON)
+   * Returns true when the device is powered on(operationMode is ON)
    */
   get isPowerOn() {
     return this._isPowerOn;
@@ -258,139 +258,173 @@ export class NavienDeviceStatusRepository {
   }
 
   /**
-   * isLeftEnabled: true when the left heater is enabled.
+   * Returns true when the heater is enabled.
    * It may be true even when the device is not working(`isPowerOn` is false).
-   * Always false for single heater.
    */
-  get isLeftEnabled() {
-    return this._isLeftEnabled;
+  get isEnabled() {
+    return this._isEnabled;
   }
 
-  set isLeftEnabled(value: boolean) {
-    if (this._isLeftEnabled === value) {
+  set isEnabled(value: boolean) {
+    if (this._isEnabled === value) {
       return;
     }
-    this._isLeftEnabled = value;
-    this.isLeftEnabledSubject.next(value);
+    this._isEnabled = value;
+    this.isEnabledSubject.next(value);
   }
 
   /**
-   * isRightEnabled: true when the right heater is enabled.
+   * Returns true when the left heater is enabled.
+   * It may be true even when the device is not working(`isPowerOn` is false).
+   * Alias of `isEnabled`.
+   */
+  get isLeftEnabled() {
+    return this.isEnabled;
+  }
+
+  /**
+   * Returns true when the right heater is enabled.
    * It may be true even when the device is not working(`isPowerOn` is false).
    * Always false for single heater.
    */
   get isRightEnabled() {
-    return this._isRightEnabled;
+    return this._isEnabled2;
   }
 
   set isRightEnabled(value: boolean) {
-    if (this._isRightEnabled === value) {
+    if (this._isEnabled2 === value) {
       return;
     }
-    this._isRightEnabled = value;
-    this.isRightEnabledSubject.next(value);
+    this._isEnabled2 = value;
+    this.isEnabled2Subject.next(value);
   }
 
   /**
-   * isIdle: true when the device on(`isPowerOn` is true) but not working.
+   * Returns true when the device is on(`isPowerOn` is true) but not working.
    * Only used for accessoryType HeaterCooler.
    * For double heater, it represents state of left heater.
    */
   get isIdle() {
-    if (this._temperatureCurrent === null) {
+    if (this._currentTemperature === null) {
       const { heatRange } = this.device.functions;
-      return this._isPowerOn && this._temperatureSet === heatRange.min;
+      return this._isPowerOn && this._targetTemperature === heatRange.min;
     }
-    return this._isPowerOn && this._temperatureSet <= this._temperatureCurrent;
+    return this._isPowerOn && this._targetTemperature <= this._currentTemperature;
   }
 
   /**
-   * isRightIdle: true when the device on(`isPowerOn` is true) but not working.
+   * Returns true when the device is on(`isPowerOn` is true) but not working.
+   * Only used for accessoryType HeaterCooler.
+   * Alias of `isIdle`.
+   */
+  get isLeftIdle() {
+    return this.isIdle;
+  }
+
+  /**
+   * Returns true when the device is on(`isPowerOn` is true) but not working.
    * Only used for accessoryType HeaterCooler.
    * Only used for double heater, it represents state of right heater.
    */
   get isRightIdle() {
-    if (this._temperatureCurrentRight === null) {
+    if (this._currentTemperature2 === null) {
       const { heatRange } = this.device.functions;
-      return this._isPowerOn && this._temperatureSetRight === heatRange.min;
+      return this._isPowerOn && this._targetTemperature2 === heatRange.min;
     }
-    return this._isPowerOn && this._temperatureSetRight <= this._temperatureCurrentRight;
+    return this._isPowerOn && this._targetTemperature2 <= this._currentTemperature2;
   }
 
   /**
-   * temperatureCurrent: current temperature of the heater.
-   * If the device does not support current temperature, it returns `temperatureSet`.
+   * Returns current temperature of the heater.
+   * If the device does not support current temperature, it returns `targetTemperature`.
    * For double heater, it represents state of left heater.
    */
-  get temperatureCurrent() {
-    return this._temperatureCurrent || this._temperatureSet;
+  get currentTemperature() {
+    return this._currentTemperature || this._targetTemperature;
   }
 
-  set temperatureCurrent(value: number) {
-    if (this._temperatureCurrent === value) {
+  set currentTemperature(value: number) {
+    if (this._currentTemperature === value) {
       return;
     }
-    this._temperatureCurrent = value;
-    this.temperatureCurrentSubject.next(value);
+    this._currentTemperature = value;
+    this.currentTemperatureSubject.next(value);
   }
 
   /**
-   * temperatureSet: target temperature of the heater.
+   * Returns current temperature of the heater.
+   * If the device does not support current temperature, it returns `leftTargetTemperature`.
+   * Alias of `currentTemperature`.
+   */
+  get leftCurrentTemperature() {
+    return this.currentTemperature;
+  }
+
+  /**
+   * Returns current temperature of the heater.
+   * If the device does not support current temperature, it returns `rightTargetTemperature`.
+   * Only used for double heater, it represents state of right heater.
+   */
+  get rightCurrentTemperature() {
+    return this._currentTemperature2 || this._targetTemperature2;
+  }
+
+  set rightCurrentTemperature(value: number) {
+    if (this._currentTemperature2 === value) {
+      return;
+    }
+    this._currentTemperature2 = value;
+    this.currentTemperature2Subject.next(value);
+  }
+
+  /**
+   * Returns target temperature of the heater.
    * For double heater, it represents state of left heater.
    */
-  get temperatureSet() {
-    return this._temperatureSet;
+  get targetTemperature() {
+    return this._targetTemperature;
   }
 
-  set temperatureSet(value: number) {
-    if (this._temperatureSet === value) {
+  set targetTemperature(value: number) {
+    if (this._targetTemperature === value) {
       return;
     }
-    this._temperatureSet = value;
-    this.temperatureSetSubject.next(value);
-    if (this._temperatureCurrent === null) {
-      this.temperatureCurrentSubject.next(value);
+    this._targetTemperature = value;
+    this.targetTemperatureSubject.next(value);
+    if (this._currentTemperature === null) {
+      this.currentTemperatureSubject.next(value);
     }
   }
 
   /**
-   * temperatureCurrentRight: current temperature of the heater.
-   * If the device does not support current temperature, it returns `temperatureSetRight`.
-   * Only used for double heater, it represents state of right heater.
+   * Returns target temperature of the heater.
+   * Alias of `targetTemperature`.
    */
-  get temperatureCurrentRight() {
-    return this._temperatureCurrentRight || this._temperatureSetRight;
-  }
-
-  set temperatureCurrentRight(value: number) {
-    if (this._temperatureCurrentRight === value) {
-      return;
-    }
-    this._temperatureCurrentRight = value;
-    this.temperatureCurrentRightSubject.next(value);
+  get leftTargetTemperature() {
+    return this.targetTemperature;
   }
 
   /**
-   * temperatureSetRight: target temperature of the heater.
+   * Returns target temperature of the heater.
    * Only used for double heater, it represents state of right heater.
    */
-  get temperatureSetRight() {
-    return this._temperatureSetRight;
+  get rightTargetTemperature() {
+    return this._targetTemperature2;
   }
 
-  set temperatureSetRight(value: number) {
-    if (this._temperatureSetRight === value) {
+  set rightTargetTemperature(value: number) {
+    if (this._targetTemperature2 === value) {
       return;
     }
-    this._temperatureSetRight = value;
-    this.temperatureSetRightSubject.next(value);
-    if (this._temperatureCurrentRight === null) {
-      this.temperatureCurrentRightSubject.next(value);
+    this._targetTemperature2 = value;
+    this.targetTemperature2Subject.next(value);
+    if (this._currentTemperature2 === null) {
+      this.currentTemperature2Subject.next(value);
     }
   }
 
-  /*
-   * isLocked: true when the child lock is enabled.
+  /**
+   * Returns true when the child lock is enabled.
    */
   get isLocked() {
     return this._isLocked;
@@ -409,27 +443,35 @@ export class NavienDeviceStatusRepository {
   }
 
   get isLeftEnabledChanges() {
-    return this.isLeftEnabledSubject.asObservable();
+    return this.isEnabledSubject.asObservable();
   }
 
   get isRightEnabledChanges() {
-    return this.isRightEnabledSubject.asObservable();
+    return this.isEnabled2Subject.asObservable();
   }
 
-  get temperatureCurrentChanges() {
-    return this.temperatureCurrentSubject.asObservable();
+  get currentTemperatureChanges() {
+    return this.currentTemperatureSubject.asObservable();
   }
 
-  get temperatureSetChanges() {
-    return this.temperatureSetSubject.asObservable();
+  get leftCurrentTemperatureChanges() {
+    return this.currentTemperatureChanges;
   }
 
-  get temperatureCurrentRightChanges() {
-    return this.temperatureCurrentRightSubject.asObservable();
+  get rightCurrentTemperatureChanges() {
+    return this.currentTemperature2Subject.asObservable();
   }
 
-  get temperatureSetRightChanges() {
-    return this.temperatureSetRightSubject.asObservable();
+  get targetTemperatureChanges() {
+    return this.targetTemperatureSubject.asObservable();
+  }
+
+  get leftTargetTemperatureChanges() {
+    return this.targetTemperatureChanges;
+  }
+
+  get rightTargetTemperatureChanges() {
+    return this.targetTemperature2Subject.asObservable();
   }
 
   get lockedChanges() {
@@ -460,9 +502,10 @@ export class NavienDeviceStatusRepository {
   isZoneIdle(zone?: HeatingZone): boolean {
     switch (zone) {
       case 'single':
-      case 'left':
       case undefined: // unified control
         return this.isIdle;
+      case 'left':
+        return this.isLeftIdle;
       case 'right':
         return this.isRightIdle;
     }
@@ -471,34 +514,36 @@ export class NavienDeviceStatusRepository {
   getCurrentTemperature(zone?: HeatingZone): number {
     switch (zone) {
       case 'single':
-      case 'left':
       case undefined: // unified control
-        return this.temperatureCurrent;
+        return this.currentTemperature;
+      case 'left':
+        return this.leftCurrentTemperature;
       case 'right':
-        return this.temperatureCurrentRight;
+        return this.rightCurrentTemperature;
     }
   }
 
   getTargetTemperature(zone?: HeatingZone): number {
     switch (zone) {
       case 'single':
-      case 'left':
       case undefined: // unified control
-        return this.temperatureSet;
+        return this.targetTemperature;
+      case 'left':
+        return this.leftTargetTemperature;
       case 'right':
-        return this.temperatureSetRight;
+        return this.rightTargetTemperature;
     }
   }
 
   dispose() {
     this.subscription.unsubscribe();
     this.isPowerOnSubject.complete();
-    this.isLeftEnabledSubject.complete();
-    this.isRightEnabledSubject.complete();
-    this.temperatureCurrentSubject.complete();
-    this.temperatureSetSubject.complete();
-    this.temperatureCurrentRightSubject.complete();
-    this.temperatureSetRightSubject.complete();
+    this.isEnabledSubject.complete();
+    this.isEnabled2Subject.complete();
+    this.currentTemperatureSubject.complete();
+    this.currentTemperature2Subject.complete();
+    this.targetTemperatureSubject.complete();
+    this.targetTemperature2Subject.complete();
     this.isLockedSubject.complete();
   }
 }
