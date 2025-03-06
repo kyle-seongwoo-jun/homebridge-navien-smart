@@ -179,6 +179,25 @@ export abstract class HeatingMat {
     await this.service.activate(this.device, isPowerOn);
   }
 
+  // Only used for HeaterCooler Service
+  protected async getHeaterState(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
+    const { HAPStatus, HapStatusError } = this.platform.api.hap;
+    const { isConnected, isPowerOn } = this.deviceStatus;
+
+    if (!isConnected) {
+      this.log.info(`Get Heater State: not responding, zone: ${zone ?? 'unified'}`);
+      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+
+    const isEnabled = zone ? this.deviceStatus.isZoneEnabled(zone) : true;
+    const isIdle = this.deviceStatus.isZoneIdle(zone);
+
+    const [state, stateString] = this.getCurrentHeaterStateWithString(isPowerOn && isEnabled, isIdle);
+
+    this.log.debug(`Get Heater State: ${stateString}, zone: ${zone ?? 'unified'}`);
+    return state;
+  }
+
   /**
    * Get current temperature of the specified zone.
    * If device is not supporting current temperature, it will return target temperature.
@@ -255,5 +274,34 @@ export abstract class HeatingMat {
 
     this.log.debug('Set Locked:', isLocked);
     await this.service.lock(this.device, isLocked);
+  }
+
+  /**
+   * Convert active and idle state to heater state.
+   * @param isActive - true if the device is active
+   * @param isIdle - true if the device is idle
+   * @returns heater state and its string representation
+   */
+  protected getCurrentHeaterStateWithString(isActive: boolean, isIdle: boolean): [CharacteristicValue, string] {
+    const { Characteristic } = this.platform;
+
+    if (!isActive) {
+      return [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
+    }
+
+    return isIdle ?
+      [Characteristic.CurrentHeaterCoolerState.IDLE, 'IDLE'] :
+      [Characteristic.CurrentHeaterCoolerState.HEATING, 'HEATING'];
+  }
+
+  /**
+   * Convert active and idle state to heater state.
+   * @param isActive - true if the device is active
+   * @param isIdle - true if the device is idle
+   * @returns heater state
+   */
+  protected getCurrentHeaterState(isActive: boolean, isIdle: boolean): CharacteristicValue {
+    const [state] = this.getCurrentHeaterStateWithString(isActive, isIdle);
+    return state;
   }
 }

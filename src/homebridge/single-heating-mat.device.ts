@@ -1,4 +1,4 @@
-import { CharacteristicValue, Service } from 'homebridge';
+import { Service } from 'homebridge';
 
 import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform.js';
 import { HeatingMat } from './heating-mat.device.js';
@@ -64,14 +64,6 @@ export class SingleHeatingMat extends HeatingMat {
       .onGet(this.getTargetTemperature.bind(this))
       .onSet(this.setTargetTemperature.bind(this));
 
-    const getCurrentHeaterState = (isPowerOn: boolean, isIdle: boolean) => {
-      return isPowerOn ?
-        isIdle ?
-          CurrentHeaterCoolerState.IDLE :
-          CurrentHeaterCoolerState.HEATING :
-        CurrentHeaterCoolerState.INACTIVE;
-    };
-
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
       heater.updateCharacteristic(Active, isPowerOn ? Active.ACTIVE : Active.INACTIVE);
@@ -80,13 +72,13 @@ export class SingleHeatingMat extends HeatingMat {
       const { isPowerOn, isIdle } = this.deviceStatus;
       heater.updateCharacteristic(CurrentTemperature, temperatureCurrent);
       // We may need to update CurrentHeaterCoolerState since isIdle may have changed
-      heater.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn, isIdle));
+      heater.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn, isIdle));
     });
     this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
       const { isPowerOn, isIdle } = this.deviceStatus;
       heater.updateCharacteristic(HeatingThresholdTemperature, temperatureSet);
       // We may need to update CurrentHeaterCoolerState since isIdle may have changed
-      heater.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn, isIdle));
+      heater.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn, isIdle));
     });
     this.deviceStatus.lockedChanges.subscribe((isLocked: boolean) => {
       heater.updateCharacteristic(LockPhysicalControls, isLocked);
@@ -152,29 +144,5 @@ export class SingleHeatingMat extends HeatingMat {
     });
 
     return thermostat;
-  }
-
-  // Only used for HeaterCooler Service
-  private async getHeaterState(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn, isIdle } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Heater State: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    const state = (() => {
-      if (!isPowerOn) {
-        return [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
-      }
-      return isIdle ?
-        [Characteristic.CurrentHeaterCoolerState.IDLE, 'IDLE'] :
-        [Characteristic.CurrentHeaterCoolerState.HEATING, 'HEATING'];
-    })();
-
-    this.log.debug('Get Heater State:', state[1]);
-    return state[0];
   }
 }

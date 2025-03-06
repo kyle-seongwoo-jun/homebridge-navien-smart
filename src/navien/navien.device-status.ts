@@ -382,6 +382,17 @@ export class NavienDeviceStatusRepository {
     }
   }
 
+  isZoneIdle(zone?: HeatingZone): boolean {
+    switch (zone) {
+      case 'single':
+      case 'left':
+      case undefined: // unified control
+        return this.isIdle;
+      case 'right':
+        return this.isRightIdle;
+    }
+  }
+
   getCurrentTemperature(zone?: HeatingZone): number {
     switch (zone) {
       case 'single':
