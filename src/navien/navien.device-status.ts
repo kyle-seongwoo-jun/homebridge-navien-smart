@@ -64,6 +64,10 @@ class NavienDeviceStatusParser {
     return status;
   }
 
+  // this logic is added on #38 (https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/pull/38)
+  // and split from parseStatusFrom() to make it more readable
+  //
+  // but i don't understand clearly why this logic is needed.
   adjustStatus(
     originalStatus: NavienDeviceStatus,
     temperatureSet: number,
@@ -184,6 +188,9 @@ export class NavienDeviceStatusRepository {
           name: this.device.name,
           ...status,
         });
+
+        // log adjusted properties for debugging
+        this.logAdjustedProperties(originalStatus, status);
       }
 
       // update status
@@ -201,6 +208,31 @@ export class NavienDeviceStatusRepository {
       this.temperatureSetRight = status.temperatureSetRight ?? this._temperatureSetRight;
       this.isLocked = status.isLocked ?? this._isLocked;
     });
+  }
+
+  logAdjustedProperties(originalStatus: NavienDeviceStatus, status: NavienDeviceStatus) {
+    const getJsonDiff = (obj1: NavienDeviceStatus, obj2: NavienDeviceStatus) => {
+      const diff: Record<string, unknown> = {};
+
+      Object.keys(obj1).forEach((key) => {
+        if (JSON.stringify(obj1[key]) !== JSON.stringify(obj2[key])) {
+          diff[key] = { original: obj1[key], adjusted: obj2[key] };
+        }
+      });
+
+      Object.keys(obj2).forEach((key) => {
+        if (!(key in obj1)) {
+          diff[key] = { original: undefined, adjusted: obj2[key] };
+        }
+      });
+
+      return diff;
+    };
+
+    const diff = getJsonDiff(originalStatus, status);
+    if (Object.keys(diff).length > 0) {
+      this.log.debug('[AWS PubSub] status adjusted:', { ...diff });
+    }
   }
 
   /**
