@@ -1,12 +1,120 @@
 import { Logger } from 'homebridge';
 import { BehaviorSubject, Subscription } from 'rxjs';
 
-import { DoubleHeaterState, OperationMode, SingleHeaterState } from '../aws/interfaces/index.js';
+import { DoubleHeaterState, NavienReportedState, OperationMode, SingleHeaterState } from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
 import { HeatingZone } from './interfaces/index.js';
 import { NavienDevice } from './navien.device.js';
 
+interface NavienDeviceStatus {
+  isConnected: boolean;
+  isPowerOn?: boolean;
+  isLeftEnabled?: boolean;
+  isRightEnabled?: boolean;
+  temperatureCurrent?: number;
+  temperatureSet?: number;
+  temperatureCurrentRight?: number;
+  temperatureSetRight?: number;
+  isLocked?: boolean;
+}
+
+class NavienDeviceStatusParser {
+  constructor(private readonly isDouble: boolean) { }
+
+  parseStatusFrom(state: NavienReportedState): NavienDeviceStatus {
+    const isConnected = state.connected;
+    const status: NavienDeviceStatus = { isConnected };
+
+    // if device is disconnected,
+    // no need to parse other properties
+    if (!isConnected) {
+      return status;
+    }
+
+    // power on/off
+    status.isPowerOn = 'operationMode' in state ?
+      state.operationMode! === OperationMode.ON :
+      undefined;
+
+    // temperature
+    if ('heater' in state) {
+      const heater = state.heater!;
+      if (this.isDouble) {
+        const { left, right } = heater as DoubleHeaterState;
+
+        status.isLeftEnabled = left?.enable;
+        status.temperatureCurrent = left?.temperature?.current;
+        status.temperatureSet = left?.temperature?.set;
+
+        status.isRightEnabled = right?.enable;
+        status.temperatureCurrentRight = right?.temperature?.current;
+        status.temperatureSetRight = right?.temperature?.set;
+      } else {
+        const single = (heater as SingleHeaterState).single;
+
+        status.isLeftEnabled = single?.enable;
+        status.temperatureCurrent = single?.temperature?.current;
+        status.temperatureSet = single?.temperature?.set;
+      }
+    }
+
+    // locked
+    status.isLocked = state.childLock;
+
+    return status;
+  }
+
+  adjustStatus(
+    originalStatus: NavienDeviceStatus,
+    temperatureSet: number,
+    temperatureSetRight: number,
+    heatRange: { min: number; max: number; step: number },
+  ): NavienDeviceStatus {
+    const status = { ...originalStatus };
+
+    // adjust temperatureSet when left is enabled/disabled
+    if (status.isLeftEnabled !== undefined) {
+      if (status.isLeftEnabled) {
+        if (temperatureSet <= heatRange.min) {
+          status.temperatureSet = heatRange.min + heatRange.step;
+        }
+      } else {
+        if (temperatureSet > heatRange.min) {
+          status.temperatureSet = heatRange.min;
+        }
+      }
+    }
+
+    // adjust isLeftEnabled when temperatureSet is changed
+    if (status.temperatureSet !== undefined) {
+      status.isLeftEnabled = status.temperatureSet > heatRange.min;
+    }
+
+    // adjust temperatureSetRight when right is enabled/disabled
+    if (status.isRightEnabled !== undefined) {
+      if (status.isRightEnabled) {
+        if (temperatureSetRight <= heatRange.min) {
+          status.temperatureSetRight = heatRange.min + heatRange.step;
+        }
+      } else {
+        if (temperatureSetRight > heatRange.min) {
+          status.temperatureSetRight = heatRange.min;
+        }
+      }
+    }
+
+    // adjust isRightEnabled when temperatureSetRight is changed
+    if (status.temperatureSetRight !== undefined) {
+      status.isRightEnabled = status.temperatureSetRight > heatRange.min;
+    }
+
+    return status;
+  }
+}
+
 export class NavienDeviceStatusRepository {
+  private readonly parser: NavienDeviceStatusParser;
+
   private _isConnected: boolean;
   private _isPowerOn: boolean;
   private _isLeftEnabled: boolean;
@@ -34,6 +142,9 @@ export class NavienDeviceStatusRepository {
   ) {
     const { heatRange } = this.device.functions;
 
+    // initialize parser
+    this.parser = new NavienDeviceStatusParser(this.device.isDouble);
+
     // initialize status
     // Please refer to the comments in the getter/setter.
     this._isConnected = false;
@@ -58,116 +169,37 @@ export class NavienDeviceStatusRepository {
     this.subscription = this.pubsub.deviceStatusChanges(this.device.id).subscribe((event) => {
       this.log.debug('[AWS PubSub] device status changed:', JSON.stringify(event));
 
-      const { heatRange } = this.device.functions;
+      // parse status
       const state = event.payload.state.reported!;
+      const originalStatus = this.parser.parseStatusFrom(state);
+      const status = this.parser.adjustStatus(originalStatus, this._temperatureSet, this._temperatureSetRight, heatRange);
 
-      // state has connected property only when device is disconnected
-      if (!state.connected) {
-        this.log.info('[AWS PubSub] device disconnected', { name: this.device.name });
-        return;
+      // log status
+      if (!status.isConnected) {
+        this.log.info('[AWS PubSub] device disconnected', {
+          name: this.device.name,
+        });
       } else {
-        this._isConnected = true;
+        this.log.debug('[AWS PubSub] current status:', {
+          name: this.device.name,
+          ...status,
+        });
       }
 
-      // status update
-      if ('heater' in state) {
-        const heater = state.heater!;
-        if (this.device.isDouble) {
-          const left = (heater as DoubleHeaterState).left;
-          const right = (heater as DoubleHeaterState).right;
-          if (left !== undefined) {
-            const temperatureLeft = left?.temperature;
-            if ('enable' in left) {
-              this.isLeftEnabled = left.enable!;
-              // adjust temperatureSet when left is enabled/disabled
-              if (left.enable) {
-                if (this.temperatureSet <= heatRange.min) {
-                  this.temperatureSet = heatRange.min + heatRange.step;
-                }
-              } else {
-                if (this.temperatureSet > heatRange.min) {
-                  this.temperatureSet = heatRange.min;
-                }
-              }
-            }
-            if (temperatureLeft !== undefined) {
-              if ('current' in temperatureLeft) {
-                this.temperatureCurrent = temperatureLeft.current!;
-              }
-              if ('set' in temperatureLeft) {
-                this.temperatureSet = temperatureLeft.set!;
-                // adjust isLeftEnabled when temperatureSet is changed
-                if (temperatureLeft.set! > heatRange.min) {
-                  this.isLeftEnabled = true;
-                } else {
-                  this.isLeftEnabled = false;
-                }
-              }
-            }
-          }
-          if (right !== undefined) {
-            const temperatureRight = right?.temperature;
-            if ('enable' in right) {
-              this.isRightEnabled = right.enable!;
-              // adjust temperatureSetRight when right is enabled/disabled
-              if (right.enable) {
-                if (this.temperatureSetRight <= heatRange.min) {
-                  this.temperatureSetRight = heatRange.min + heatRange.step;
-                }
-              } else {
-                if (this.temperatureSetRight > heatRange.min) {
-                  this.temperatureSetRight = heatRange.min;
-                }
-              }
-            }
-            if (temperatureRight !== undefined) {
-              if ('current' in temperatureRight) {
-                this.temperatureCurrentRight = temperatureRight.current!;
-              }
-              if ('set' in temperatureRight) {
-                this.temperatureSetRight = temperatureRight.set!;
-                // adjust isRightEnabled when temperatureSetRight is changed
-                if (temperatureRight.set! > heatRange.min) {
-                  this.isRightEnabled = true;
-                } else {
-                  this.isRightEnabled = false;
-                }
-              }
-            }
-          }
-        } else {
-          const single = (heater as SingleHeaterState).single;
-          if (single?.temperature !== undefined) {
-            // isLeftEnabled, isRightEnabled are always false for single heater
-            const temperature = single?.temperature;
-            if ('current' in temperature) {
-              this.temperatureCurrent = temperature.current!;
-            }
-            if ('set' in temperature) {
-              this.temperatureSet = temperature.set!;
-            }
-          }
-        }
+      // update status
+      this._isConnected = status.isConnected;
+      this.isPowerOn = status.isPowerOn ?? this._isPowerOn;
+      this.isLeftEnabled = status.isLeftEnabled ?? this._isLeftEnabled;
+      this.isRightEnabled = status.isRightEnabled ?? this._isRightEnabled;
+      if (status.temperatureCurrent !== undefined) {
+        this.temperatureCurrent = status.temperatureCurrent;
       }
-      if ('childLock' in state) {
-        this.isLocked = state.childLock!;
+      if (status.temperatureCurrentRight !== undefined) {
+        this.temperatureCurrentRight = status.temperatureCurrentRight;
       }
-      if ('operationMode' in state) {
-        this.isPowerOn = (state.operationMode === OperationMode.ON);
-      }
-
-      // log current status
-      this.log.debug('[AWS PubSub] current status:', {
-        name: this.device.name,
-        isPowerOn: this.isPowerOn,
-        isLeftEnabled: this.isLeftEnabled,
-        isRightEnabled: this.isRightEnabled,
-        temperatureCurrent: this.temperatureCurrent,
-        temperatureSet: this.temperatureSet,
-        temperatureRightCurrent: this.temperatureCurrentRight,
-        temperatureRightSet: this.temperatureSetRight,
-        isLocked: this.isLocked,
-      });
+      this.temperatureSet = status.temperatureSet ?? this._temperatureSet;
+      this.temperatureSetRight = status.temperatureSetRight ?? this._temperatureSetRight;
+      this.isLocked = status.isLocked ?? this._isLocked;
     });
   }
 
