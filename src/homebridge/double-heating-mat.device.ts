@@ -310,62 +310,59 @@ export class DoubleHeatingMat extends HeatingMat {
     return [thermostatLeft, thermostatRight];
   }
 
-  private async getRunningLeft(): Promise<CharacteristicValue> {
-    return this.getPower('left');
+  private getServiceBy(zone: 'left' | 'right'): Service {
+    switch (zone) {
+      case 'left':
+        return this.accessoryType === 'HeaterCooler' ?
+          this.heaterLeft! :
+          this.thermostatLeft!;
+      case 'right':
+        return this.accessoryType === 'HeaterCooler' ?
+          this.heaterRight! :
+          this.thermostatRight!;
+    }
   }
 
-  private async setRunningLeft(value: CharacteristicValue) {
-    const isEnable = !!value;
-    const { heatRange } = this.device.functions;
-    const { isPowerOn, isLeftEnabled, isRightEnabled } = this.deviceStatus;
-    const {
-      Characteristic: {
-        TargetTemperature,
-      },
-    } = this.platform;
-
-    this.log.debug('Set Left Running:', isEnable ? 'ON' : 'OFF');
-
-    if (isEnable && !isPowerOn && isLeftEnabled) {
-      await this.service.activate(this.device, true);
-    } else if (!isEnable && isPowerOn && !isRightEnabled) {
-      // If it tries to disable left zone while right zone is already disabled, just turn off the device
-      await this.service.activate(this.device, false);
-    } else {
-      // We can simply enable/disable the zone by setting the target temperature
-      const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
-      this.thermostatLeft?.updateCharacteristic(TargetTemperature, temperature);
-      await this.service.setTemperature(this.device, temperature, 'left');
-    }
+  private async getRunningLeft(): Promise<CharacteristicValue> {
+    return this.getPower('left');
   }
 
   private async getRunningRight(): Promise<CharacteristicValue> {
     return this.getPower('right');
   }
 
+  private async setRunningLeft(value: CharacteristicValue) {
+    return this.setRunning(value, 'left');
+  }
+
   private async setRunningRight(value: CharacteristicValue) {
-    const isEnable = !!value;
+    return this.setRunning(value, 'right');
+  }
+
+  private async setRunning(value: CharacteristicValue, zone: 'left' | 'right') {
+    const isRunning = !!value;
+    const { isPowerOn } = this.deviceStatus;
+    const [isZoneEnabled, isOtherZoneEnabled] = this.deviceStatus.getZoneEnables(zone);
+
+    // turn on/off the device
+    if ((isRunning && !isPowerOn && isZoneEnabled) ||
+      (!isRunning && isPowerOn && !isOtherZoneEnabled)) {
+      return this.setPower(isRunning);
+    }
+
     const { heatRange } = this.device.functions;
-    const { isPowerOn, isLeftEnabled, isRightEnabled } = this.deviceStatus;
     const {
       Characteristic: {
         TargetTemperature,
       },
     } = this.platform;
 
-    this.log.debug('Set Right Running:', isEnable ? 'ON' : 'OFF');
+    // enable/disable the zone by setting temperature to min
+    const temperature = isRunning ? heatRange.min + heatRange.step : heatRange.min;
 
-    if (isEnable && !isPowerOn && isRightEnabled) {
-      await this.service.activate(this.device, true);
-    } else if (!isEnable && isPowerOn && !isLeftEnabled) {
-      // If it tries to disable right zone while left zone is already disabled, just turn off the device
-      await this.service.activate(this.device, false);
-    } else {
-      // We can simply enable/disable the zone by setting the target temperature
-      const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
-      this.thermostatRight?.updateCharacteristic(TargetTemperature, temperature);
-      await this.service.setTemperature(this.device, temperature, 'right');
-    }
+    this.log.debug(`Set Running: ${isRunning ? 'ON' : 'OFF'}, zone: ${zone}`);
+    this.getServiceBy(zone).updateCharacteristic(TargetTemperature, temperature);
+    await this.service.setTemperature(this.device, temperature, zone);
   }
 
   // Only used for HeaterCooler Service

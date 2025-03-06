@@ -446,6 +446,17 @@ export class NavienDeviceStatusRepository {
     }
   }
 
+  getZoneEnables(zone: 'left' | 'right'): [boolean, boolean] {
+    const { isLeftEnabled, isRightEnabled } = this;
+
+    switch (zone) {
+      case 'left':
+        return [isLeftEnabled, isRightEnabled];
+      case 'right':
+        return [isRightEnabled, isLeftEnabled];
+    }
+  }
+
   isZoneIdle(zone?: HeatingZone): boolean {
     switch (zone) {
       case 'single':
