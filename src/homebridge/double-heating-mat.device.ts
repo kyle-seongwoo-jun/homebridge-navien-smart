@@ -319,30 +319,11 @@ export class DoubleHeatingMat extends HeatingMat {
   }
 
   private async getRunningLeft(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn, isLeftEnabled } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Left Running: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    switch (this.accessoryType) {
-      case 'HeaterCooler':
-        return isPowerOn && isLeftEnabled ?
-          Characteristic.Active.ACTIVE :
-          Characteristic.Active.INACTIVE;
-      case 'Thermostat':
-        return isPowerOn && isLeftEnabled ?
-          Characteristic.CurrentHeatingCoolingState.HEAT :
-          Characteristic.CurrentHeatingCoolingState.OFF;
-    }
+    return this.getPower('left');
   }
 
   private async setRunningLeft(value: CharacteristicValue) {
-    const state = value as number;
-    const isEnable = !!state;
+    const isEnable = !!value;
     const { heatRange } = this.device.functions;
     const { isPowerOn, isLeftEnabled, isRightEnabled } = this.deviceStatus;
     const {
@@ -367,30 +348,11 @@ export class DoubleHeatingMat extends HeatingMat {
   }
 
   private async getRunningRight(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn, isRightEnabled } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Right Running: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    switch (this.accessoryType) {
-      case 'HeaterCooler':
-        return isPowerOn && isRightEnabled ?
-          Characteristic.Active.ACTIVE :
-          Characteristic.Active.INACTIVE;
-      case 'Thermostat':
-        return isPowerOn && isRightEnabled ?
-          Characteristic.CurrentHeatingCoolingState.HEAT :
-          Characteristic.CurrentHeatingCoolingState.OFF;
-    }
+    return this.getPower('right');
   }
 
   private async setRunningRight(value: CharacteristicValue) {
-    const state = value as number;
-    const isEnable = !!state;
+    const isEnable = !!value;
     const { heatRange } = this.device.functions;
     const { isPowerOn, isLeftEnabled, isRightEnabled } = this.deviceStatus;
     const {

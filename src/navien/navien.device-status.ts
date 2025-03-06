@@ -372,27 +372,24 @@ export class NavienDeviceStatusRepository {
     return this.isLockedSubject.asObservable();
   }
 
+  isZoneEnabled(zone: HeatingZone): boolean {
+    switch (zone) {
+      case 'single':
+      case 'left':
+        return this.isLeftEnabled;
+      case 'right':
+        return this.isRightEnabled;
+    }
+  }
+
   getCurrentTemperature(zone?: HeatingZone): number {
     switch (zone) {
       case 'single':
       case 'left':
-      case undefined:
+      case undefined: // unified control
         return this.temperatureCurrent;
       case 'right':
         return this.temperatureCurrentRight;
-    }
-  }
-
-  setCurrentTemperature(value: number, zone?: HeatingZone) {
-    switch (zone) {
-      case 'single':
-      case 'left':
-      case undefined:
-        this.temperatureCurrent = value;
-        break;
-      case 'right':
-        this.temperatureCurrentRight = value;
-        break;
     }
   }
 
@@ -400,23 +397,10 @@ export class NavienDeviceStatusRepository {
     switch (zone) {
       case 'single':
       case 'left':
-      case undefined:
+      case undefined: // unified control
         return this.temperatureSet;
       case 'right':
         return this.temperatureSetRight;
-    }
-  }
-
-  setTargetTemperature(value: number, zone?: HeatingZone) {
-    switch (zone) {
-      case 'single':
-      case 'left':
-      case undefined:
-        this.temperatureSet = value;
-        break;
-      case 'right':
-        this.temperatureSetRight = value;
-        break;
     }
   }
 

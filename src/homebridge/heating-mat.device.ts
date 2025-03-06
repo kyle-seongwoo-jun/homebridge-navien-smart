@@ -1,6 +1,5 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
-import { HeatingZone } from '../navien/interfaces/index.js';
 import { NavienDevice } from '../navien/navien.device.js';
 import { NavienDeviceStatusRepository } from '../navien/navien.device-status.js';
 import { NavienService } from '../navien/navien.service.js';
@@ -137,23 +136,42 @@ export abstract class HeatingMat {
       });
   }
 
-  protected async getPower(): Promise<CharacteristicValue> {
+  /**
+   * Get power state of the device, or running state of the specified zone.
+   * @param zone - left or right, `undefined` for device
+   * @returns power is on or off, or running state of the specified zone
+   */
+  protected async getPower(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, isPowerOn } = this.deviceStatus;
 
     if (!isConnected) {
-      this.log.info('Get Power: not responding');
+      this.log.info(zone ?
+        `Get Running: not responding, zone: ${zone}` :
+        'Get Power: not responding',
+      );
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    this.log.debug('Get Power:', isPowerOn ? 'ON' : 'OFF');
+    const state = zone ?
+      isPowerOn && this.deviceStatus.isZoneEnabled(zone) :
+      isPowerOn;
+    this.log.debug(zone ?
+      `Get Running: ${state ? 'ON' : 'OFF'}, zone: ${zone}` :
+      `Get Power: ${state ? 'ON' : 'OFF'}`,
+    );
+
     // boolean automatically converted to 0 | 1
     // Active.INACTIVE | Active.ACTIVE
     // TargetHeatingCoolingState.OFF | TargetHeatingCoolingState.HEAT
     // CurrentHeatingCoolingState.OFF | CurrentHeatingCoolingState.HEAT
-    return isPowerOn;
+    return state;
   }
 
+  /**
+   * Turn on or off the device.
+   * @param value - true to turn on, false to turn off
+   */
   protected async setPower(value: CharacteristicValue /* 0 | 1 | boolean */) {
     const isPowerOn = !!value;
 
@@ -164,10 +182,10 @@ export abstract class HeatingMat {
   /**
    * Get current temperature of the specified zone.
    * If device is not supporting current temperature, it will return target temperature.
-   * @param zone - single or left/right, `undefined` for unified control
+   * @param zone - left or right, `undefined` for unified control
    * @returns current temperature
    */
-  protected async getCurrentTemperature(zone?: HeatingZone): Promise<CharacteristicValue> {
+  protected async getCurrentTemperature(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected } = this.deviceStatus;
 
@@ -184,10 +202,10 @@ export abstract class HeatingMat {
 
   /**
    * Get target temperature of the specified zone.
-   * @param zone - single or left/right, `undefined` for unified
+   * @param zone - left or right, `undefined` for unified
    * @returns target temperature
    */
-  protected async getTargetTemperature(zone?: HeatingZone): Promise<CharacteristicValue> {
+  protected async getTargetTemperature(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected } = this.deviceStatus;
 
@@ -205,9 +223,9 @@ export abstract class HeatingMat {
   /**
    * Set target temperature of the specified zone.
    * @param value - target temperature
-   * @param zone - single or left/right, `undefined` for unified
+   * @param zone - left or right, `undefined` for unified
    */
-  protected async setTargetTemperature(value: CharacteristicValue, zone?: HeatingZone) {
+  protected async setTargetTemperature(value: CharacteristicValue, zone?: 'left' | 'right') {
     const temperature = value as number;
 
     this.log.debug(`Set Target Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
