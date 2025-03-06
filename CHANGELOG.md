@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.8.0...v1.8.1) (2025-03-06)
+
+
+### Bug Fixes
+
+* use device nicknames for service names in double heating mat ([3c4379c](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/3c4379cfe54ef1a80cac246604b5e7ef9011812b))
+
 ## [1.8.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.7.6...v1.8.0) (2025-02-03)
 
 
