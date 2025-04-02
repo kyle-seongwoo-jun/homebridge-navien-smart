@@ -1,9 +1,9 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
 import { NavienHomebridgePlatform, NavienPlatformAccessory } from '../platform.js';
-import { AbstractHeatingMat } from './abstract-heating-mat.device.js';
+import { HeatingMat } from './heating-mat.device.js';
 
-export class DoubleHeatingMat extends AbstractHeatingMat {
+export class DoubleHeatingMat extends HeatingMat {
   private readonly mainSwitch: Service;
   private readonly heaterLeft?: Service;
   private readonly heaterRight?: Service;
@@ -27,8 +27,6 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
       case 'Thermostat':
         [this.thermostatLeft, this.thermostatRight] = this.initializeThermostat();
         break;
-      default:
-        throw new Error(`Invalid accessory type: ${this.accessoryType}`);
     }
   }
 
@@ -52,8 +50,8 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
     mainSwitch.setCharacteristic(ConfiguredName, name);
 
     mainSwitch.getCharacteristic(On)
-      .onGet(this.getPowerOn.bind(this))
-      .onSet(this.setPowerOn.bind(this));
+      .onGet(this.getPower.bind(this))
+      .onSet(this.setPower.bind(this));
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
@@ -112,79 +110,71 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
 
     // current temperature
     heaterLeft.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrent.bind(this));
+      .onGet(this.getCurrentTemperatureLeft.bind(this));
     heaterRight.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrentRight.bind(this));
+      .onGet(this.getCurrentTemperatureRight.bind(this));
 
     // target temperature
     heaterLeft.getCharacteristic(HeatingThresholdTemperature)
-      .onGet(this.getTemperatureSet.bind(this))
-      .onSet(this.setTemperatureSet.bind(this));
+      .onGet(this.getTargetTemperatureLeft.bind(this))
+      .onSet(this.setTargetTemperatureLeft.bind(this));
     heaterRight.getCharacteristic(HeatingThresholdTemperature)
-      .onGet(this.getTemperatureSetRight.bind(this))
-      .onSet(this.setTemperatureSetRight.bind(this));
-
-    const getCurrentHeaterState = (isZoneEnabled: boolean, isZoneIdle: boolean) => {
-      return isZoneEnabled ?
-        isZoneIdle ?
-          CurrentHeaterCoolerState.IDLE :
-          CurrentHeaterCoolerState.HEATING :
-        CurrentHeaterCoolerState.INACTIVE;
-    };
+      .onGet(this.getTargetTemperatureRight.bind(this))
+      .onSet(this.setTargetTemperatureRight.bind(this));
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
-      const { isLeftEnabled, isRightEnabled, isIdle, isRightIdle } = this.deviceStatus;
+      const { isLeftEnabled, isRightEnabled, isLeftIdle, isRightIdle } = this.deviceStatus;
       const isLeftRunning = isPowerOn && isLeftEnabled;
       const isRightRunning = isPowerOn && isRightEnabled;
 
       heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
       heaterRight.updateCharacteristic(Active, isRightRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isLeftRunning, isIdle));
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isRightRunning, isRightIdle));
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isLeftIdle));
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isRightRunning, isRightIdle));
     });
 
     this.deviceStatus.isLeftEnabledChanges.subscribe((isLeftEnabled: boolean) => {
-      const { isPowerOn, isIdle } = this.deviceStatus;
+      const { isPowerOn, isLeftIdle } = this.deviceStatus;
       const isLeftRunning = isPowerOn && isLeftEnabled;
 
       heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isLeftRunning, isIdle));
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isLeftIdle));
     });
     this.deviceStatus.isRightEnabledChanges.subscribe((isRightEnabled: boolean) => {
       const { isPowerOn, isRightIdle } = this.deviceStatus;
       const isRightRunning = isPowerOn && isRightEnabled;
 
       heaterRight.updateCharacteristic(Active, isRightRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isRightRunning, isRightIdle));
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isRightRunning, isRightIdle));
     });
 
-    this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
-      const { isPowerOn, isLeftEnabled, isIdle } = this.deviceStatus;
+    this.deviceStatus.leftCurrentTemperatureChanges.subscribe((temperature: number) => {
+      const { isPowerOn, isLeftEnabled, isLeftIdle } = this.deviceStatus;
 
-      heaterLeft.updateCharacteristic(CurrentTemperature, temperatureCurrent);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isLeftEnabled, isIdle));
+      heaterLeft.updateCharacteristic(CurrentTemperature, temperature);
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isLeftIdle));
     });
-    this.deviceStatus.temperatureCurrentRightChanges.subscribe((temperatureRightCurrent: number) => {
+    this.deviceStatus.rightCurrentTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
 
-      heaterRight.updateCharacteristic(CurrentTemperature, temperatureRightCurrent);
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
+      heaterRight.updateCharacteristic(CurrentTemperature, temperature);
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
     });
 
-    this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
-      const { isPowerOn, isLeftEnabled, isIdle } = this.deviceStatus;
+    this.deviceStatus.leftTargetTemperatureChanges.subscribe((temperature: number) => {
+      const { isPowerOn, isLeftEnabled, isLeftIdle } = this.deviceStatus;
 
-      heaterLeft.updateCharacteristic(HeatingThresholdTemperature, temperatureSet);
-      // We may need to update CurrentHeaterCoolerState since isIdle may have changed
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isLeftEnabled, isIdle));
+      heaterLeft.updateCharacteristic(HeatingThresholdTemperature, temperature);
+      // We may need to update CurrentHeaterCoolerState since isLeftIdle may have changed
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isLeftIdle));
     });
-    this.deviceStatus.temperatureSetRightChanges.subscribe((temperatureRightSet: number) => {
+    this.deviceStatus.rightTargetTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
 
-      heaterRight.updateCharacteristic(HeatingThresholdTemperature, temperatureRightSet);
+      heaterRight.updateCharacteristic(HeatingThresholdTemperature, temperature);
       // We may need to update CurrentHeaterCoolerState since isRightIdle may have changed
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
     });
 
     this.deviceStatus.lockedChanges.subscribe((isLocked: boolean) => {
@@ -242,17 +232,17 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
 
     //current temperature
     thermostatLeft.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrent.bind(this));
+      .onGet(this.getCurrentTemperatureLeft.bind(this));
     thermostatRight.getCharacteristic(CurrentTemperature)
-      .onGet(this.getTemperatureCurrentRight.bind(this));
+      .onGet(this.getCurrentTemperatureRight.bind(this));
 
     // target temperature
     thermostatLeft.getCharacteristic(TargetTemperature)
-      .onGet(this.getTemperatureSet.bind(this))
-      .onSet(this.setTemperatureSet.bind(this));
+      .onGet(this.getTargetTemperatureLeft.bind(this))
+      .onSet(this.setTargetTemperatureLeft.bind(this));
     thermostatRight.getCharacteristic(TargetTemperature)
-      .onGet(this.getTemperatureSetRight.bind(this))
-      .onSet(this.setTemperatureSetRight.bind(this));
+      .onGet(this.getTargetTemperatureRight.bind(this))
+      .onSet(this.setTargetTemperatureRight.bind(this));
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
@@ -303,231 +293,109 @@ export class DoubleHeatingMat extends AbstractHeatingMat {
       );
     });
 
-    this.deviceStatus.temperatureCurrentChanges.subscribe((temperatureCurrent: number) => {
-      thermostatLeft.updateCharacteristic(CurrentTemperature, temperatureCurrent);
+    this.deviceStatus.leftCurrentTemperatureChanges.subscribe((temperature: number) => {
+      thermostatLeft.updateCharacteristic(CurrentTemperature, temperature);
     });
-    this.deviceStatus.temperatureCurrentRightChanges.subscribe((temperatureCurrentRight: number) => {
-      thermostatRight.updateCharacteristic(CurrentTemperature, temperatureCurrentRight);
+    this.deviceStatus.rightCurrentTemperatureChanges.subscribe((temperature: number) => {
+      thermostatRight.updateCharacteristic(CurrentTemperature, temperature);
     });
 
-    this.deviceStatus.temperatureSetChanges.subscribe((temperatureSet: number) => {
-      thermostatLeft.updateCharacteristic(TargetTemperature, temperatureSet);
+    this.deviceStatus.leftTargetTemperatureChanges.subscribe((temperature: number) => {
+      thermostatLeft.updateCharacteristic(TargetTemperature, temperature);
     });
-    this.deviceStatus.temperatureSetRightChanges.subscribe((temperatureSetRight: number) => {
-      thermostatRight.updateCharacteristic(TargetTemperature, temperatureSetRight);
+    this.deviceStatus.rightTargetTemperatureChanges.subscribe((temperature: number) => {
+      thermostatRight.updateCharacteristic(TargetTemperature, temperature);
     });
 
     return [thermostatLeft, thermostatRight];
   }
 
-  private async getPowerOn(): Promise<CharacteristicValue> {
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get PowerOn: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+  private getServiceBy(zone: 'left' | 'right'): Service {
+    switch (zone) {
+      case 'left':
+        return this.accessoryType === 'HeaterCooler' ?
+          this.heaterLeft! :
+          this.thermostatLeft!;
+      case 'right':
+        return this.accessoryType === 'HeaterCooler' ?
+          this.heaterRight! :
+          this.thermostatRight!;
     }
-
-    this.log.debug('Get PowerOn:', isPowerOn ? 'ON' : 'OFF');
-
-    return isPowerOn;
-  }
-
-  private async setPowerOn(value: CharacteristicValue) {
-    const state = value as number;
-    const isPowerOn = !!state;
-
-    this.log.info('Set PowerOn:', isPowerOn ? 'ON' : 'OFF');
-
-    await this.service.activate(this.device, isPowerOn);
   }
 
   private async getRunningLeft(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn, isLeftEnabled } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Left Running: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    switch (this.accessoryType) {
-      case 'HeaterCooler':
-        return isPowerOn && isLeftEnabled ?
-          Characteristic.Active.ACTIVE :
-          Characteristic.Active.INACTIVE;
-      case 'Thermostat':
-        return isPowerOn && isLeftEnabled ?
-          Characteristic.CurrentHeatingCoolingState.HEAT :
-          Characteristic.CurrentHeatingCoolingState.OFF;
-      default:
-        throw new Error(`Invalid accessory type: ${this.accessoryType}`);
-    }
-  }
-
-  private async setRunningLeft(value: CharacteristicValue) {
-    const state = value as number;
-    const isEnable = !!state;
-    const { heatRange } = this.device.functions;
-    const { isPowerOn, isLeftEnabled, isRightEnabled } = this.deviceStatus;
-    const {
-      Characteristic: {
-        TargetTemperature,
-      },
-    } = this.platform;
-
-    this.log.info('Set Left Running:', isEnable ? 'ON' : 'OFF');
-
-    if (isEnable && !isPowerOn && isLeftEnabled) {
-      await this.service.activate(this.device, true);
-    } else if (!isEnable && isPowerOn && !isRightEnabled) {
-      // If it tries to disable left zone while right zone is already disabled, just turn off the device
-      await this.service.activate(this.device, false);
-    } else {
-      // We can simply enable/disable the zone by setting the target temperature
-      const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
-      this.thermostatLeft?.updateCharacteristic(TargetTemperature, temperature);
-      await this.service.setZoneTemperature(this.device, 'left', temperature);
-    }
+    return this.getPower('left');
   }
 
   private async getRunningRight(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn, isRightEnabled } = this.deviceStatus;
+    return this.getPower('right');
+  }
 
-    if (!isConnected) {
-      this.log.info('Get Right Running: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    switch (this.accessoryType) {
-      case 'HeaterCooler':
-        return isPowerOn && isRightEnabled ?
-          Characteristic.Active.ACTIVE :
-          Characteristic.Active.INACTIVE;
-      case 'Thermostat':
-        return isPowerOn && isRightEnabled ?
-          Characteristic.CurrentHeatingCoolingState.HEAT :
-          Characteristic.CurrentHeatingCoolingState.OFF;
-      default:
-        throw new Error(`Invalid accessory type: ${this.accessoryType}`);
-    }
+  private async setRunningLeft(value: CharacteristicValue) {
+    return this.setRunning(value, 'left');
   }
 
   private async setRunningRight(value: CharacteristicValue) {
-    const state = value as number;
-    const isEnable = !!state;
+    return this.setRunning(value, 'right');
+  }
+
+  private async setRunning(value: CharacteristicValue, zone: 'left' | 'right') {
+    const isRunning = !!value;
+    const { isPowerOn } = this.deviceStatus;
+    const [isZoneEnabled, isOtherZoneEnabled] = this.deviceStatus.getZoneEnables(zone);
+
+    // turn on/off the device
+    if ((isRunning && !isPowerOn && isZoneEnabled) ||
+      (!isRunning && isPowerOn && !isOtherZoneEnabled)) {
+      return this.setPower(isRunning);
+    }
+
     const { heatRange } = this.device.functions;
-    const { isPowerOn, isLeftEnabled, isRightEnabled } = this.deviceStatus;
     const {
       Characteristic: {
         TargetTemperature,
       },
     } = this.platform;
 
-    this.log.info('Set Right Running:', isEnable ? 'ON' : 'OFF');
+    // enable/disable the zone by setting temperature to min
+    const temperature = isRunning ? heatRange.min + heatRange.step : heatRange.min;
 
-    if (isEnable && !isPowerOn && isRightEnabled) {
-      await this.service.activate(this.device, true);
-    } else if (!isEnable && isPowerOn && !isLeftEnabled) {
-      // If it tries to disable right zone while left zone is already disabled, just turn off the device
-      await this.service.activate(this.device, false);
-    } else {
-      // We can simply enable/disable the zone by setting the target temperature
-      const temperature = isEnable ? heatRange.min + heatRange.step : heatRange.min;
-      this.thermostatRight?.updateCharacteristic(TargetTemperature, temperature);
-      await this.service.setZoneTemperature(this.device, 'right', temperature);
-    }
+    this.log.debug(`Set Running: ${isRunning ? 'ON' : 'OFF'}, zone: ${zone}`);
+    this.getServiceBy(zone).updateCharacteristic(TargetTemperature, temperature);
+    await this.service.setTemperature(this.device, temperature, zone);
   }
 
   // Only used for HeaterCooler Service
   private async getHeaterStateLeft(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn, isLeftEnabled, isIdle } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Left Heater State: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    const state = isPowerOn && isLeftEnabled ?
-      isIdle ?
-        [Characteristic.CurrentHeaterCoolerState.IDLE, 'IDLE'] :
-        [Characteristic.CurrentHeaterCoolerState.HEATING, 'HEATING'] :
-      [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
-
-    this.log.debug('Get Left Heater State:', state[1]);
-
-    return state[0];
+    return this.getHeaterState('left');
   }
 
   // Only used for HeaterCooler Service
   private async getHeaterStateRight(): Promise<CharacteristicValue> {
-    const { Characteristic } = this.platform;
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get Right Heater State: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    const state = isPowerOn && isRightEnabled ?
-      isRightIdle ?
-        [Characteristic.CurrentHeaterCoolerState.IDLE, 'IDLE'] :
-        [Characteristic.CurrentHeaterCoolerState.HEATING, 'HEATING'] :
-      [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
-
-    this.log.debug('Get Right Heater State:', state[1]);
-
-    return state[0];
+    return this.getHeaterState('right');
   }
 
-  private async getTemperatureSet(): Promise<CharacteristicValue> {
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, temperatureSet } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get TemperatureSet: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get TemperatureSet:', temperatureSet);
-
-    return temperatureSet;
+  private async getCurrentTemperatureLeft(): Promise<CharacteristicValue> {
+    return this.getCurrentTemperature('left');
   }
 
-  private async setTemperatureSet(value: CharacteristicValue) {
-    const temperature = value as number;
-
-    this.log.info('Set TemperatureSet:', temperature);
-
-    await this.service.setZoneTemperature(this.device, 'left', temperature);
+  private async getCurrentTemperatureRight(): Promise<CharacteristicValue> {
+    return this.getCurrentTemperature('right');
   }
 
-  private async getTemperatureSetRight(): Promise<CharacteristicValue> {
-    const { HAPStatus, HapStatusError } = this.platform.api.hap;
-    const { isConnected, temperatureSetRight } = this.deviceStatus;
-
-    if (!isConnected) {
-      this.log.info('Get TemperatureSetRight: not responding');
-      throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.log.debug('Get TemperatureSetRight:', temperatureSetRight);
-
-    return temperatureSetRight;
+  private async getTargetTemperatureLeft(): Promise<CharacteristicValue> {
+    return this.getTargetTemperature('left');
   }
 
-  private async setTemperatureSetRight(value: CharacteristicValue) {
-    const temperature = value as number;
+  private async getTargetTemperatureRight(): Promise<CharacteristicValue> {
+    return this.getTargetTemperature('right');
+  }
 
-    this.log.info('Set TemperatureSetRight:', temperature);
+  private async setTargetTemperatureLeft(value: CharacteristicValue) {
+    return this.setTargetTemperature(value, 'left');
+  }
 
-    await this.service.setZoneTemperature(this.device, 'right', temperature);
+  private async setTargetTemperatureRight(value: CharacteristicValue) {
+    return this.setTargetTemperature(value, 'right');
   }
 }

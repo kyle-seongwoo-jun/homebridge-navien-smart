@@ -2,15 +2,22 @@ import assert from 'assert';
 import { Logging } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
-import { DoubleHeaterState, HeaterItemState, HeaterState, OperationMode, SingleHeaterState } from '../aws/interfaces/index.js';
+import { HeaterItemState, OperationMode } from '../aws/interfaces/index.js';
 import { API_URL } from './constants.js';
 import { ApiException } from './exceptions/api.exception.js';
-import { CommonResponse, Device, DevicesResponse, ResponseCode } from './interfaces/index.js';
+import { CommonResponse, Device, DevicesResponse, HeatingZone, ResponseCode } from './interfaces/index.js';
 import { NavienSession } from './navien.session.js';
 import { NavienSessionManager } from './navien.session-manager.js';
 import { NavienUser } from './navien.user.js';
 
 type RequestMethods = 'GET' | 'POST';
+
+type TemperatureParam = {
+  enable: boolean;
+  temperature: number;
+};
+
+type TemperatureParams = Partial<Record<HeatingZone, TemperatureParam>>;
 
 export class NavienApi {
 
@@ -161,42 +168,26 @@ export class NavienApi {
     });
   }
 
-  public setTemperature(
-    device: Device, zone: 'single' | 'left' | 'right', temperature: number, range: { min: number; max: number; step: number },
-  ) {
-    // validate temperature
-    const { min, max, step } = range;
-    const enable = temperature > min;
-
-    if (temperature < min || temperature > max) {
-      throw new Error(`Temperature must be between ${min} and ${max}. current: ${temperature}`);
-    }
-    if (temperature % step !== 0) {
-      throw new Error(`Temperature must be multiple of ${step}. current: ${temperature}`);
-    }
+  public setTemperature(device: Device, params: TemperatureParams) {
+    const { single, left, right } = params;
 
     // create heater payload
-    const heaterItem = (temperature: number) => (<HeaterItemState>{
-      enable,
+    const heaterItem = (item: TemperatureParam) => (<HeaterItemState>{
+      enable: item.enable,
       temperature: {
-        set: temperature,
+        set: item.temperature,
       },
     });
 
-    const heater: HeaterState = zone === 'single'
-      ? { single: heaterItem(temperature) } as SingleHeaterState
-      : { [zone]: heaterItem(temperature) } as DoubleHeaterState;
-
-    if (enable) {
-      return this.controlDevice(device, {
-        operationMode: OperationMode.ON,
-        heater,
-      });
-    } else {
-      return this.controlDevice(device, {
-        heater,
-      });
-    }
+    const enable = single?.enable || left?.enable || right?.enable;
+    return this.controlDevice(device, {
+      operationMode: enable ? OperationMode.ON : undefined,
+      heater: {
+        single: single ? heaterItem(single) : undefined,
+        left: left ? heaterItem(left) : undefined,
+        right: right ? heaterItem(right) : undefined,
+      },
+    });
   }
 
   public setChildLock(device: Device, isLocked: boolean) {

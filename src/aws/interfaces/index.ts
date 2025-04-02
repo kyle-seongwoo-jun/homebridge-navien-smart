@@ -1,1 +1,1 @@
-export * from './device-event.inteface.js';
+export * from './device-event.interface.js';

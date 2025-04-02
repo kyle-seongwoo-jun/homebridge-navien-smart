@@ -1,8 +1,7 @@
 import { API, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
 import path from 'path';
 
-import { DoubleHeatingMat } from './homebridge/double-heating-mat.device.js';
-import { SingleHeatingMat } from './homebridge/single-heating-mat.device.js';
+import { HeatingMatFactory } from './homebridge/heating-mat.factory.js';
 import { NavienException } from './navien/exceptions/index.js';
 import { NavienApi } from './navien/navien.api.js';
 import { NavienAuth } from './navien/navien.auth.js';
@@ -149,15 +148,10 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
     // the cached devices we stored in the `configureAccessory` method above
     const existingAccessory = this.accessories.get(uuid);
 
-    const isDoubleHeatingMat = device.isDouble && this.config.separateControl;
-
     if (existingAccessory) {
-      const hasService = (serviceType: typeof Service) => existingAccessory.services.some((service) => service instanceof serviceType);
-      if (
-        (isDoubleHeatingMat !== hasService(this.Service.Switch)) ||
-        (this.config.accessoryType === 'HeaterCooler' && !hasService(this.Service.HeaterCooler)) ||
-        (this.config.accessoryType === 'Thermostat' && !hasService(this.Service.Thermostat))
-      ) {
+      // if the accessory type has changed,
+      // remove and re-register the accessory
+      if (this._isAccessoryTypeChanged(device, existingAccessory)) {
         this.log.info(
           'Cached accessory does not match current config. Removing existing accessory from cache:',
           existingAccessory.displayName,
@@ -167,6 +161,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
         return this._registerDeviceAsAccessory(device);
       }
+
       // the accessory already exists
       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
@@ -176,11 +171,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the restored accessory
       // this is imported from `platformAccessory.ts`
-      if (isDoubleHeatingMat) {
-        new DoubleHeatingMat(this, existingAccessory);
-      } else {
-        new SingleHeatingMat(this, existingAccessory);
-      }
+      HeatingMatFactory.create(this, existingAccessory);
 
       // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
       // remove platform accessories when no longer present
@@ -199,11 +190,7 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
       // create the accessory handler for the newly create accessory
       // this is imported from `platformAccessory.ts`
-      if (isDoubleHeatingMat) {
-        new DoubleHeatingMat(this, accessory);
-      } else {
-        new SingleHeatingMat(this, accessory);
-      }
+      HeatingMatFactory.create(this, accessory);
 
       // link the accessory to your platform
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
@@ -211,6 +198,15 @@ export class NavienHomebridgePlatform implements DynamicPlatformPlugin {
 
     // push into discoveredCacheUUIDs
     this.discoveredCacheUUIDs.push(uuid);
+  }
+
+  private _isAccessoryTypeChanged(device: NavienDevice, existingAccessory: NavienPlatformAccessory) {
+    const hasService = (serviceType: typeof Service) => existingAccessory.services.some((service) => service instanceof serviceType);
+
+    const isDoubleHeatingMat = device.isDouble && this.config.separateControl;
+    return (isDoubleHeatingMat !== hasService(this.Service.Switch)) ||
+      (this.config.accessoryType === 'HeaterCooler' && !hasService(this.Service.HeaterCooler)) ||
+      (this.config.accessoryType === 'Thermostat' && !hasService(this.Service.Thermostat));
   }
 
   /**
