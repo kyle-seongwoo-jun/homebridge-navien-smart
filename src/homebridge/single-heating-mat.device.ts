@@ -66,21 +66,31 @@ export class SingleHeatingMat extends HeatingMat {
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
+      this.log.debug('[HB] Update Power:', isPowerOn ? 'ON' : 'OFF');
       heater.updateCharacteristic(Active, isPowerOn ? Active.ACTIVE : Active.INACTIVE);
     });
     this.deviceStatus.currentTemperatureChanges.subscribe((temperature: number) => {
-      const { isPowerOn, isIdle } = this.deviceStatus;
+      this.log.debug('[HB] Update Current Temperature:', temperature);
       heater.updateCharacteristic(CurrentTemperature, temperature);
+
       // We may need to update CurrentHeaterCoolerState since isIdle may have changed
-      heater.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn, isIdle));
+      const { isPowerOn, isIdle } = this.deviceStatus;
+      const [state, stateString] = this.getCurrentHeaterStateWithString(isPowerOn, isIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateString}`);
+      heater.updateCharacteristic(CurrentHeaterCoolerState, state);
     });
     this.deviceStatus.targetTemperatureChanges.subscribe((temperature: number) => {
-      const { isPowerOn, isIdle } = this.deviceStatus;
+      this.log.debug('[HB] Update Target Temperature:', temperature);
       heater.updateCharacteristic(HeatingThresholdTemperature, temperature);
+
       // We may need to update CurrentHeaterCoolerState since isIdle may have changed
-      heater.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn, isIdle));
+      const { isPowerOn, isIdle } = this.deviceStatus;
+      const [state, stateString] = this.getCurrentHeaterStateWithString(isPowerOn, isIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateString}`);
+      heater.updateCharacteristic(CurrentHeaterCoolerState, state);
     });
     this.deviceStatus.lockedChanges.subscribe((isLocked: boolean) => {
+      this.log.debug('[HB] Update Locked:', isLocked);
       heater.updateCharacteristic(LockPhysicalControls, isLocked);
     });
 
@@ -127,6 +137,7 @@ export class SingleHeatingMat extends HeatingMat {
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
+      this.log.debug('[HB] Update Power:', isPowerOn ? 'ON' : 'OFF');
       thermostat.updateCharacteristic(
         CurrentHeatingCoolingState,
         isPowerOn ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
@@ -137,9 +148,11 @@ export class SingleHeatingMat extends HeatingMat {
       );
     });
     this.deviceStatus.currentTemperatureChanges.subscribe((temperature: number) => {
+      this.log.debug('[HB] Update Current Temperature:', temperature);
       thermostat.updateCharacteristic(CurrentTemperature, temperature);
     });
     this.deviceStatus.targetTemperatureChanges.subscribe((temperature: number) => {
+      this.log.debug('[HB] Update Target Temperature:', temperature);
       thermostat.updateCharacteristic(TargetTemperature, temperature);
     });
 

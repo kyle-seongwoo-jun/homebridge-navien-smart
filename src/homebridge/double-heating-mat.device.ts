@@ -55,6 +55,7 @@ export class DoubleHeatingMat extends HeatingMat {
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
+      this.log.debug('[HB] Update Power:', isPowerOn ? 'ON' : 'OFF');
       mainSwitch.updateCharacteristic(On, isPowerOn);
     });
 
@@ -128,56 +129,89 @@ export class DoubleHeatingMat extends HeatingMat {
       const isLeftRunning = isPowerOn && isLeftEnabled;
       const isRightRunning = isPowerOn && isRightEnabled;
 
+      this.log.debug(`[HB] Update Running: ${isLeftRunning ? 'ON' : 'OFF'}, zone: left`);
+      this.log.debug(`[HB] Update Running: ${isRightRunning ? 'ON' : 'OFF'}, zone: right`);
       heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
       heaterRight.updateCharacteristic(Active, isRightRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isLeftIdle));
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isRightRunning, isRightIdle));
+
+      const [stateLeft, stateLeftString] = this.getCurrentHeaterStateWithString(isLeftRunning, isLeftIdle);
+      const [stateRight, stateRightString] = this.getCurrentHeaterStateWithString(isRightRunning, isRightIdle);
+
+      this.log.debug(`[HB] Update Heater State: ${stateLeftString}, zone: left`);
+      this.log.debug(`[HB] Update Heater State: ${stateRightString}, zone: right`);
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, stateLeft);
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, stateRight);
     });
 
     this.deviceStatus.isLeftEnabledChanges.subscribe((isLeftEnabled: boolean) => {
       const { isPowerOn, isLeftIdle } = this.deviceStatus;
       const isLeftRunning = isPowerOn && isLeftEnabled;
 
+      this.log.debug(`[HB] Update Running: ${isLeftRunning ? 'ON' : 'OFF'}, zone: left`);
       heaterLeft.updateCharacteristic(Active, isLeftRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isLeftRunning, isLeftIdle));
+
+      const [stateLeft, stateLeftString] = this.getCurrentHeaterStateWithString(isLeftRunning, isLeftIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateLeftString}, zone: left`);
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, stateLeft);
     });
     this.deviceStatus.isRightEnabledChanges.subscribe((isRightEnabled: boolean) => {
       const { isPowerOn, isRightIdle } = this.deviceStatus;
       const isRightRunning = isPowerOn && isRightEnabled;
 
+      this.log.debug(`[HB] Update Running: ${isRightRunning ? 'ON' : 'OFF'}, zone: right`);
       heaterRight.updateCharacteristic(Active, isRightRunning ? Active.ACTIVE : Active.INACTIVE);
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isRightRunning, isRightIdle));
+
+      const [stateRight, stateRightString] = this.getCurrentHeaterStateWithString(isRightRunning, isRightIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateRightString}, zone: right`);
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, stateRight);
     });
 
     this.deviceStatus.leftCurrentTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isLeftEnabled, isLeftIdle } = this.deviceStatus;
 
+      this.log.debug(`[HB] Update Current Temperature: ${temperature}, zone: left`);
       heaterLeft.updateCharacteristic(CurrentTemperature, temperature);
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isLeftIdle));
+
+      const [stateLeft, stateLeftString] = this.getCurrentHeaterStateWithString(isPowerOn && isLeftEnabled, isLeftIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateLeftString}, zone: left`);
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, stateLeft);
     });
     this.deviceStatus.rightCurrentTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
 
+      this.log.debug(`[HB] Update Current Temperature: ${temperature}, zone: right`);
       heaterRight.updateCharacteristic(CurrentTemperature, temperature);
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
+
+      const [stateRight, stateRightString] = this.getCurrentHeaterStateWithString(isPowerOn && isRightEnabled, isRightIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateRightString}, zone: right`);
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, stateRight);
     });
 
     this.deviceStatus.leftTargetTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isLeftEnabled, isLeftIdle } = this.deviceStatus;
 
+      this.log.debug(`[HB] Update Target Temperature: ${temperature}, zone: left`);
       heaterLeft.updateCharacteristic(HeatingThresholdTemperature, temperature);
+
       // We may need to update CurrentHeaterCoolerState since isLeftIdle may have changed
-      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isLeftEnabled, isLeftIdle));
+      const [stateLeft, stateLeftString] = this.getCurrentHeaterStateWithString(isPowerOn && isLeftEnabled, isLeftIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateLeftString}, zone: left`);
+      heaterLeft.updateCharacteristic(CurrentHeaterCoolerState, stateLeft);
     });
     this.deviceStatus.rightTargetTemperatureChanges.subscribe((temperature: number) => {
       const { isPowerOn, isRightEnabled, isRightIdle } = this.deviceStatus;
 
+      this.log.debug(`[HB] Update Target Temperature: ${temperature}, zone: right`);
       heaterRight.updateCharacteristic(HeatingThresholdTemperature, temperature);
+
       // We may need to update CurrentHeaterCoolerState since isRightIdle may have changed
-      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, this.getCurrentHeaterState(isPowerOn && isRightEnabled, isRightIdle));
+      const [stateRight, stateRightString] = this.getCurrentHeaterStateWithString(isPowerOn && isRightEnabled, isRightIdle);
+      this.log.debug(`[HB] Update Heater State: ${stateRightString}, zone: right`);
+      heaterRight.updateCharacteristic(CurrentHeaterCoolerState, stateRight);
     });
 
     this.deviceStatus.lockedChanges.subscribe((isLocked: boolean) => {
+      this.log.debug('[HB] Update Locked:', isLocked);
       heaterLeft.updateCharacteristic(LockPhysicalControls, isLocked);
       heaterRight.updateCharacteristic(LockPhysicalControls, isLocked);
     });
@@ -248,6 +282,7 @@ export class DoubleHeatingMat extends HeatingMat {
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
       const { isLeftEnabled, isRightEnabled } = this.deviceStatus;
 
+      this.log.debug(`[HB] Update Running: ${isPowerOn && isLeftEnabled ? 'ON' : 'OFF'}, zone: left`);
       thermostatLeft.updateCharacteristic(
         CurrentHeatingCoolingState,
         isPowerOn && isLeftEnabled ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
@@ -256,6 +291,8 @@ export class DoubleHeatingMat extends HeatingMat {
         TargetHeatingCoolingState,
         isPowerOn && isLeftEnabled ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
       );
+
+      this.log.debug(`[HB] Update Running: ${isPowerOn && isRightEnabled ? 'ON' : 'OFF'}, zone: right`);
       thermostatRight.updateCharacteristic(
         CurrentHeatingCoolingState,
         isPowerOn && isRightEnabled ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
@@ -270,6 +307,7 @@ export class DoubleHeatingMat extends HeatingMat {
       const { isPowerOn } = this.deviceStatus;
       const isLeftRunning = isPowerOn && isLeftEnabled;
 
+      this.log.debug(`[HB] Update Running: ${isLeftRunning ? 'ON' : 'OFF'}, zone: left`);
       thermostatLeft.updateCharacteristic(
         CurrentHeatingCoolingState,
         isLeftRunning ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
@@ -283,6 +321,7 @@ export class DoubleHeatingMat extends HeatingMat {
       const { isPowerOn } = this.deviceStatus;
       const isRightRunning = isPowerOn && isRightEnabled;
 
+      this.log.debug(`[HB] Update Running: ${isRightRunning ? 'ON' : 'OFF'}, zone: right`);
       thermostatRight.updateCharacteristic(
         CurrentHeatingCoolingState,
         isRightRunning ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
@@ -294,16 +333,20 @@ export class DoubleHeatingMat extends HeatingMat {
     });
 
     this.deviceStatus.leftCurrentTemperatureChanges.subscribe((temperature: number) => {
+      this.log.debug(`[HB] Update Current Temperature: ${temperature}, zone: left`);
       thermostatLeft.updateCharacteristic(CurrentTemperature, temperature);
     });
     this.deviceStatus.rightCurrentTemperatureChanges.subscribe((temperature: number) => {
+      this.log.debug(`[HB] Update Current Temperature: ${temperature}, zone: right`);
       thermostatRight.updateCharacteristic(CurrentTemperature, temperature);
     });
 
     this.deviceStatus.leftTargetTemperatureChanges.subscribe((temperature: number) => {
+      this.log.debug(`[HB] Update Target Temperature: ${temperature}, zone: left`);
       thermostatLeft.updateCharacteristic(TargetTemperature, temperature);
     });
     this.deviceStatus.rightTargetTemperatureChanges.subscribe((temperature: number) => {
+      this.log.debug(`[HB] Update Target Temperature: ${temperature}, zone: right`);
       thermostatRight.updateCharacteristic(TargetTemperature, temperature);
     });
 
@@ -360,7 +403,7 @@ export class DoubleHeatingMat extends HeatingMat {
     // enable/disable the zone by setting temperature to min
     const temperature = isRunning ? heatRange.min + heatRange.step : heatRange.min;
 
-    this.log.debug(`Set Running: ${isRunning ? 'ON' : 'OFF'}, zone: ${zone}`);
+    this.log.debug(`[HB] Set Running: ${isRunning ? 'ON' : 'OFF'}, zone: ${zone}`);
     this.getServiceBy(zone).updateCharacteristic(TargetTemperature, temperature);
     await this.service.setTemperature(this.device, temperature, zone);
   }

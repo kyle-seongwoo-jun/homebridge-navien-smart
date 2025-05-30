@@ -147,8 +147,8 @@ export abstract class HeatingMat {
 
     if (!isConnected) {
       this.log.info(zone ?
-        `Get Running: not responding, zone: ${zone}` :
-        'Get Power: not responding',
+        `[HB] Get Running: not responding, zone: ${zone}` :
+        '[HB] Get Power: not responding',
       );
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -157,8 +157,8 @@ export abstract class HeatingMat {
       isPowerOn && this.deviceStatus.isZoneEnabled(zone) :
       isPowerOn;
     this.log.debug(zone ?
-      `Get Running: ${state ? 'ON' : 'OFF'}, zone: ${zone}` :
-      `Get Power: ${state ? 'ON' : 'OFF'}`,
+      `[HB] Get Running: ${state ? 'ON' : 'OFF'}, zone: ${zone}` :
+      `[HB] Get Power: ${state ? 'ON' : 'OFF'}`,
     );
 
     // boolean automatically converted to 0 | 1
@@ -175,7 +175,7 @@ export abstract class HeatingMat {
   protected async setPower(value: CharacteristicValue /* 0 | 1 | boolean */) {
     const isPowerOn = !!value;
 
-    this.log.debug('Set Power:', isPowerOn ? 'ON' : 'OFF');
+    this.log.debug('[HB] Set Power:', isPowerOn ? 'ON' : 'OFF');
     await this.service.activate(this.device, isPowerOn);
   }
 
@@ -185,7 +185,7 @@ export abstract class HeatingMat {
     const { isConnected, isPowerOn } = this.deviceStatus;
 
     if (!isConnected) {
-      this.log.info(`Get Heater State: not responding, zone: ${zone ?? 'unified'}`);
+      this.log.info(`[HB] Get Heater State: not responding, zone: ${zone ?? 'unified'}`);
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
@@ -194,7 +194,7 @@ export abstract class HeatingMat {
 
     const [state, stateString] = this.getCurrentHeaterStateWithString(isPowerOn && isEnabled, isIdle);
 
-    this.log.debug(`Get Heater State: ${stateString}, zone: ${zone ?? 'unified'}`);
+    this.log.debug(`[HB] Get Heater State: ${stateString}, zone: ${zone ?? 'unified'}`);
     return state;
   }
 
@@ -209,13 +209,13 @@ export abstract class HeatingMat {
     const { isConnected } = this.deviceStatus;
 
     if (!isConnected) {
-      this.log.info(`Get Current Temperature: not responding, zone: ${zone ?? 'unified'}`);
+      this.log.info(`[HB] Get Current Temperature: not responding, zone: ${zone ?? 'unified'}`);
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
     const temperature = this.deviceStatus.getCurrentTemperature(zone);
 
-    this.log.debug(`Get Current Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
+    this.log.debug(`[HB] Get Current Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
     return temperature;
   }
 
@@ -229,13 +229,13 @@ export abstract class HeatingMat {
     const { isConnected } = this.deviceStatus;
 
     if (!isConnected) {
-      this.log.info(`Get Target Temperature: not responding, zone: ${zone ?? 'unified'}`);
+      this.log.info(`[HB] Get Target Temperature: not responding, zone: ${zone ?? 'unified'}`);
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
     const temperature = this.deviceStatus.getTargetTemperature(zone);
 
-    this.log.debug(`Get Target Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
+    this.log.debug(`[HB] Get Target Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
     return temperature;
   }
 
@@ -247,7 +247,7 @@ export abstract class HeatingMat {
   protected async setTargetTemperature(value: CharacteristicValue, zone?: 'left' | 'right') {
     const temperature = value as number;
 
-    this.log.debug(`Set Target Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
+    this.log.debug(`[HB] Set Target Temperature: ${temperature}, zone: ${zone ?? 'unified'}`);
     await this.service.setTemperature(this.device, temperature, zone);
   }
 
@@ -258,11 +258,11 @@ export abstract class HeatingMat {
     const { isConnected, isLocked } = this.deviceStatus;
 
     if (!isConnected) {
-      this.log.info('Get Locked: not responding');
+      this.log.info('[HB] Get Locked: not responding');
       throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    this.log.debug('Get Locked:', isLocked);
+    this.log.debug('[HB] Get Locked:', isLocked);
     return isLocked ?
       Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED :
       Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED;
@@ -272,7 +272,7 @@ export abstract class HeatingMat {
   private async setLocked(value: CharacteristicValue /* 0 | 1 */) {
     const isLocked = !!value;
 
-    this.log.debug('Set Locked:', isLocked);
+    this.log.debug('[HB] Set Locked:', isLocked);
     await this.service.lock(this.device, isLocked);
   }
 
@@ -292,16 +292,5 @@ export abstract class HeatingMat {
     return isIdle ?
       [Characteristic.CurrentHeaterCoolerState.IDLE, 'IDLE'] :
       [Characteristic.CurrentHeaterCoolerState.HEATING, 'HEATING'];
-  }
-
-  /**
-   * Convert active and idle state to heater state.
-   * @param isActive - true if the device is active
-   * @param isIdle - true if the device is idle
-   * @returns heater state
-   */
-  protected getCurrentHeaterState(isActive: boolean, isIdle: boolean): CharacteristicValue {
-    const [state] = this.getCurrentHeaterStateWithString(isActive, isIdle);
-    return state;
   }
 }
