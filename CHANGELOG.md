@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.8.1...v1.9.0) (2025-05-30)
+
+
+### Features
+
+* **homebridge:** refresh device status when getting characteristics ([e51cda7](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/e51cda7f4e826b070cfc90352f5aa9b78a13bfd3))
+
 ## [1.8.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.8.0...v1.8.1) (2025-03-06)
 
 
