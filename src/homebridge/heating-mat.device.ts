@@ -142,6 +142,8 @@ export abstract class HeatingMat {
    * @returns power is on or off, or running state of the specified zone
    */
   protected async getPower(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
+    this.service.requestRefreshingStatus(this.device);
+
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, isPowerOn } = this.deviceStatus;
 
@@ -181,6 +183,8 @@ export abstract class HeatingMat {
 
   // Only used for HeaterCooler Service
   protected async getHeaterState(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
+    this.service.requestRefreshingStatus(this.device);
+
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, isPowerOn } = this.deviceStatus;
 
@@ -205,6 +209,8 @@ export abstract class HeatingMat {
    * @returns current temperature
    */
   protected async getCurrentTemperature(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
+    this.service.requestRefreshingStatus(this.device);
+
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected } = this.deviceStatus;
 
@@ -225,6 +231,8 @@ export abstract class HeatingMat {
    * @returns target temperature
    */
   protected async getTargetTemperature(zone?: 'left' | 'right'): Promise<CharacteristicValue> {
+    this.service.requestRefreshingStatus(this.device);
+
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected } = this.deviceStatus;
 
@@ -253,6 +261,8 @@ export abstract class HeatingMat {
 
   // Only used for HeaterCooler Service
   private async getLocked(): Promise<CharacteristicValue> {
+    this.service.requestRefreshingStatus(this.device);
+
     const { Characteristic } = this.platform;
     const { HAPStatus, HapStatusError } = this.platform.api.hap;
     const { isConnected, isLocked } = this.deviceStatus;

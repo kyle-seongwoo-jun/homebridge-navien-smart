@@ -4,6 +4,7 @@ import { Logging } from 'homebridge';
 
 import { OperationMode } from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
+import { debounced } from '../utils/debounce.util.js';
 import { NavienException, ValidationException } from './exceptions/index.js';
 import { Device, HeatingZone } from './interfaces/index.js';
 import { NavienApi } from './navien.api.js';
@@ -154,6 +155,17 @@ export class NavienService {
 
   private _lock(device: NavienDevice, isLocked: boolean) {
     return this.api.setChildLock(device, isLocked);
+  }
+
+  /**
+   * Request refreshing status for the device.
+   * @param device - The device to request refreshing status for.
+   */
+  public async requestRefreshingStatus(device: NavienDevice) {
+    debounced(() => {
+      this.log.info(`Requesting status for device: ${device.name}`);
+      this._initializeDevice(device);
+    }, `requestRefreshingStatus:${device.id}`);
   }
 
   public async activate(device: NavienDevice, isActive: boolean) {
