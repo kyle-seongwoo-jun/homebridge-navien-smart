@@ -144,7 +144,7 @@ export class NavienApi {
               event: {
                 modelCode: parseInt(modelCode),
               },
-              beep: this.soundEnabled,
+              beep: payload !== undefined && this.soundEnabled,
               ...payload,
             },
           },
