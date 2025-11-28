@@ -1,34 +1,18 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
-import typescriptEslintEslintPlugin from '@typescript-eslint/eslint-plugin';
+import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
 
 export default [
   {
     ignores: ['dist'],
   },
-  ...compat.extends(
-    'eslint:recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:@typescript-eslint/recommended',
-  ),
+  js.configs.recommended,
   {
     plugins: {
-      '@typescript-eslint': typescriptEslintEslintPlugin,
+      '@typescript-eslint': tseslint,
       '@stylistic': stylistic,
       'simple-import-sort': simpleImportSort,
     },
