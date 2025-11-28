@@ -9,7 +9,7 @@
   "homepage": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart.git"
+    "url": "git+https://github.com/kyle-seongwoo-jun/homebridge-navien-smart.git"
   },
   "bugs": {
     "url": "https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues"
@@ -20,8 +20,16 @@
   },
   "main": "dist/index.js",
   "bin": {
-    "navien": "./bin/navien.js"
+    "navien": "bin/navien.js"
   },
+  "files": [
+    "bin",
+    "dist",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+    "config.schema.json"
+  ],
   "scripts": {
     "lint": "eslint --max-warnings=0 --fix",
     "watch": "npm run build && npm link && nodemon",
