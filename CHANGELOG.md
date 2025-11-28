@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.9.0...v1.9.1) (2025-11-28)
+
+
+### Bug Fixes
+
+* disable beep for status update ([6b19b9d](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/commit/6b19b9d02c4e7633efc0f613e683ace78d08e9d9))
+
 ## [1.9.0](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/compare/v1.8.1...v1.9.0) (2025-05-30)
 
 
