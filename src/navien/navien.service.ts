@@ -32,11 +32,11 @@ export class NavienService {
     const { user, awsSession } = this.sessionManager;
     const pubsub = this.pubsub = new AwsPubSub(user!.userSeq, user!.homeSeq, awsSession!);
     pubsub.connectionStateChanges().subscribe(async (connectionState) => {
-      this.log.info('[AWS PubSub] Connection state changed:', connectionState);
+      this.log.debug('[AWS PubSub] Connection state changed:', connectionState);
 
       // refresh aws session and reconnect if connection is disrupted
       if (connectionState === ConnectionState.ConnectionDisrupted) {
-        this.log.info('[AWS PubSub] Refreshing AWS session and reconnecting...');
+        this.log.warn('[AWS PubSub] Refreshing AWS session and reconnecting...');
         try {
           const newSession = await this.sessionManager.refreshAwsSession();
           pubsub.setSession(newSession);
@@ -163,13 +163,13 @@ export class NavienService {
    */
   public async requestRefreshingStatus(device: NavienDevice) {
     debounced(() => {
-      this.log.info(`Requesting status for device: ${device.name}`);
+      this.log.debug(`Requesting status for device: ${device.name}`);
       this._initializeDevice(device);
     }, `requestRefreshingStatus:${device.id}`);
   }
 
   public async activate(device: NavienDevice, isActive: boolean) {
-    this.log.info('Setting active to', isActive, 'for device', device.name);
+    this.log.debug('Setting active to', isActive, 'for device', device.name);
 
     const success = await this._activateDevice(device, isActive).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
@@ -181,14 +181,14 @@ export class NavienService {
     });
 
     if (success) {
-      this.log.info('Active set to', isActive, 'for device', device.name);
+      this.log.debug('Active set to', isActive, 'for device', device.name);
     } else {
       this.log.error('Failed to set active to', isActive, 'for device', device.name);
     }
   }
 
   public async setTemperature(device: NavienDevice, temperature: number, zone?: HeatingZone) {
-    this.log.info(`Setting temperature to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
+    this.log.debug(`Setting temperature to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
 
     // if zone is provided, set temperature for the specified zone
     // otherwise set temperature for both zones
@@ -206,14 +206,14 @@ export class NavienService {
     });
 
     if (success) {
-      this.log.info(`Temperature set to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
+      this.log.debug(`Temperature set to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
     } else {
       this.log.error(`Failed to set temperature to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
     }
   }
 
   public async lock(device: NavienDevice, isLocked: boolean) {
-    this.log.info('Setting lock to', isLocked, 'for device', device.name);
+    this.log.debug('Setting lock to', isLocked, 'for device', device.name);
 
     const success = await this._lock(device, isLocked).then(() => true).catch((error) => {
       if (error instanceof NavienException) {
@@ -225,7 +225,7 @@ export class NavienService {
     });
 
     if (success) {
-      this.log.info('Lock set to', isLocked, 'for device', device.name);
+      this.log.debug('Lock set to', isLocked, 'for device', device.name);
     } else {
       this.log.error('Failed to set lock to', isLocked, 'for device', device.name);
     }

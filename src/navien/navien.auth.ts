@@ -16,7 +16,7 @@ export class NavienAuth {
   ) { }
 
   async login(username: string, password: string): Promise<LoginResponse> {
-    this.log.info(`Logging in with username: ${username}, password: ${password}`);
+    this.log.debug(`Logging in with username: ${username}, password: ${password}`);
 
     // request login
     // this will redirect to /member/loginOk and it requires cookie so we use fetch-cookie
@@ -64,7 +64,7 @@ export class NavienAuth {
   }
 
   async tokenLogin(accessToken: string, userId: string, accountSeq: number): Promise<TokenLoginResponse> {
-    this.log.info(`Logging in with accessToken: ${accessToken}, userId: ${userId}, accountSeq: ${accountSeq}`);
+    this.log.debug(`Logging in with accessToken: ${accessToken}, userId: ${userId}, accountSeq: ${accountSeq}`);
 
     const response = await fetch(`${API_URL}/users/secured-sign-in`, {
       method: 'POST',
@@ -91,7 +91,7 @@ export class NavienAuth {
   }
 
   async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    this.log.info(`Refreshing token with refreshToken: ${refreshToken}`);
+    this.log.debug(`Refreshing token with refreshToken: ${refreshToken}`);
 
     const response = await fetch(`${API_URL}/auth/token/refresh`, {
       method: 'POST',
