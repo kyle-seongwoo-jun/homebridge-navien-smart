@@ -2,7 +2,7 @@ import assert from 'assert';
 import { Logging } from 'homebridge';
 import fetch, { BodyInit, HeadersInit, Response } from 'node-fetch';
 
-import { HeaterItemState, OperationMode } from '../aws/interfaces/index.js';
+import { HeaterItemState, OperationMode, Season } from '../aws/interfaces/index.js';
 import { API_URL } from './constants.js';
 import { ApiException } from './exceptions/api.exception.js';
 import { CommonResponse, Device, DevicesResponse, HeatingZone, ResponseCode } from './interfaces/index.js';
@@ -168,7 +168,14 @@ export class NavienApi {
     });
   }
 
-  public setTemperature(device: Device, params: TemperatureParams) {
+  public setSeason(device: Device, season: Season) {
+    return this.controlDevice(device, {
+      operationMode: OperationMode.ON,
+      season,
+    });
+  }
+
+  public setTemperature(device: Device, params: TemperatureParams, season?: Season) {
     const { single, left, right } = params;
 
     // create heater payload
@@ -182,6 +189,7 @@ export class NavienApi {
     const enable = single?.enable || left?.enable || right?.enable;
     return this.controlDevice(device, {
       operationMode: enable ? OperationMode.ON : undefined,
+      season,
       heater: {
         single: single ? heaterItem(single) : undefined,
         left: left ? heaterItem(left) : undefined,

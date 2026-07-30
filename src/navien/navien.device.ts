@@ -36,7 +36,7 @@ export class NavienDevice {
 
   get functions() {
     const { functions } = this.Properties.registry.attributes;
-    const { heatControl } = functions;
+    const { heatControl, coolControl } = functions;
 
     const step = parseFloat(heatControl.unit);
     const heatRange = {
@@ -47,6 +47,11 @@ export class NavienDevice {
 
     return {
       heatRange,
+      coolRange: coolControl ? {
+        min: coolControl.rangeMin,
+        max: coolControl.rangeMax,
+        step: parseFloat(coolControl.unit),
+      } : undefined,
     };
   }
 }

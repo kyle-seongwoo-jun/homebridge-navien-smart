@@ -1,7 +1,13 @@
 import { Logger } from 'homebridge';
 import { BehaviorSubject, Subscription } from 'rxjs';
 
-import { DoubleHeaterState, NavienReportedState, OperationMode, SingleHeaterState } from '../aws/interfaces/index.js';
+import {
+  DoubleHeaterState,
+  NavienReportedState,
+  OperationMode,
+  Season,
+  SingleHeaterState,
+} from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
 import { HeatingZone } from './interfaces/index.js';
 import { NavienDevice } from './navien.device.js';
@@ -9,6 +15,7 @@ import { NavienDevice } from './navien.device.js';
 interface NavienDeviceStatus {
   isConnected: boolean;
   isPowerOn?: boolean;
+  season?: Season;
   isEnabled?: boolean;
   isEnabled2?: boolean;
   currentTemperature?: number;
@@ -35,6 +42,7 @@ class NavienDeviceStatusParser {
     status.isPowerOn = 'operationMode' in state ?
       state.operationMode! === OperationMode.ON :
       undefined;
+    status.season = state.season;
 
     // temperature
     if ('heater' in state) {
@@ -121,6 +129,7 @@ export class NavienDeviceStatusRepository {
 
   private _isConnected: boolean;
   private _isPowerOn: boolean;
+  private _season: Season;
   private _isEnabled: boolean;
   private _isEnabled2: boolean;
   private _currentTemperature: number | null;
@@ -130,6 +139,7 @@ export class NavienDeviceStatusRepository {
   private _isLocked: boolean;
 
   private readonly isPowerOnSubject: BehaviorSubject<boolean>;
+  private readonly seasonSubject: BehaviorSubject<Season>;
   private readonly isEnabledSubject: BehaviorSubject<boolean>;
   private readonly isEnabled2Subject: BehaviorSubject<boolean>;
   private readonly currentTemperatureSubject: BehaviorSubject<number>;
@@ -153,6 +163,7 @@ export class NavienDeviceStatusRepository {
     // Please refer to the comments in the getter/setter.
     this._isConnected = false;
     this._isPowerOn = false;
+    this._season = Season.HEAT;
     this._isEnabled = false;
     this._isEnabled2 = false;
     this._currentTemperature = null;
@@ -162,6 +173,7 @@ export class NavienDeviceStatusRepository {
     this._isLocked = false;
 
     this.isPowerOnSubject = new BehaviorSubject<boolean>(false);
+    this.seasonSubject = new BehaviorSubject<Season>(Season.HEAT);
     this.isEnabledSubject = new BehaviorSubject<boolean>(false);
     this.isEnabled2Subject = new BehaviorSubject<boolean>(false);
     this.currentTemperatureSubject = new BehaviorSubject<number>(heatRange.min);
@@ -176,7 +188,10 @@ export class NavienDeviceStatusRepository {
       // parse status
       const state = event.payload.state.reported!;
       const originalStatus = this.parser.parseStatusFrom(state);
-      const status = this.parser.adjustStatus(originalStatus, this._targetTemperature, this._targetTemperature2, heatRange);
+      const season = originalStatus.season ?? this._season;
+      const status = season === Season.COOL ?
+        originalStatus :
+        this.parser.adjustStatus(originalStatus, this._targetTemperature, this._targetTemperature2, heatRange);
 
       // log status
       if (!status.isConnected) {
@@ -196,6 +211,7 @@ export class NavienDeviceStatusRepository {
       // update status
       this._isConnected = status.isConnected;
       this.isPowerOn = status.isPowerOn ?? this._isPowerOn;
+      this.season = status.season ?? this._season;
       this.isEnabled = status.isEnabled ?? this._isEnabled;
       this.isRightEnabled = status.isEnabled2 ?? this._isEnabled2;
       if (status.currentTemperature !== undefined) {
@@ -257,6 +273,22 @@ export class NavienDeviceStatusRepository {
     this.isPowerOnSubject.next(value);
   }
 
+  get season() {
+    return this._season;
+  }
+
+  set season(value: Season) {
+    if (this._season === value) {
+      return;
+    }
+    this._season = value;
+    this.seasonSubject.next(value);
+  }
+
+  get isCooling() {
+    return this._season === Season.COOL;
+  }
+
   /**
    * Returns true when the heater is enabled.
    * It may be true even when the device is not working(`isPowerOn` is false).
@@ -309,7 +341,9 @@ export class NavienDeviceStatusRepository {
       const { heatRange } = this.device.functions;
       return this._isPowerOn && this._targetTemperature === heatRange.min;
     }
-    return this._isPowerOn && this._targetTemperature <= this._currentTemperature;
+    return this._isPowerOn && (this.isCooling ?
+      this._targetTemperature >= this._currentTemperature :
+      this._targetTemperature <= this._currentTemperature);
   }
 
   /**
@@ -442,6 +476,10 @@ export class NavienDeviceStatusRepository {
     return this.isPowerOnSubject.asObservable();
   }
 
+  get seasonChanges() {
+    return this.seasonSubject.asObservable();
+  }
+
   get isLeftEnabledChanges() {
     return this.isEnabledSubject.asObservable();
   }
@@ -538,6 +576,7 @@ export class NavienDeviceStatusRepository {
   dispose() {
     this.subscription.unsubscribe();
     this.isPowerOnSubject.complete();
+    this.seasonSubject.complete();
     this.isEnabledSubject.complete();
     this.isEnabled2Subject.complete();
     this.currentTemperatureSubject.complete();
