@@ -29,6 +29,7 @@ interface State<TDesired, TReported> {
 export interface NavienDesiredState {
     event: null;
     operationMode: OperationMode;
+    season?: Season;
     childLock: boolean;
     heater: HeaterState;
 }
@@ -38,6 +39,7 @@ export interface NavienReportedState {
     connected: boolean;
     errorCode?: number;
     operationMode?: OperationMode;
+    season?: Season;
     heater?: HeaterState;
     childLock?: boolean;
     schedule?: ScheduleState;
@@ -46,6 +48,11 @@ export interface NavienReportedState {
 export enum OperationMode {
     OFF = 0,
     ON = 1,
+}
+
+export enum Season {
+    HEAT = 0,
+    COOL = 2,
 }
 
 export type HeaterState = SingleHeaterState | DoubleHeaterState;

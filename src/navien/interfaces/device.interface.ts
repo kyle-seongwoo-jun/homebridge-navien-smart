@@ -55,15 +55,18 @@ export interface Functions {
     lockMode: boolean;
     powerSaving: boolean;
     heatControl: HeatControl;
+    coolControl?: TemperatureControl;
 }
 
-export interface HeatControl {
+export interface TemperatureControl {
     unit: string;
     safeValue: number;
     rangeMax: number;
     rangeMin: number;
     enableSafe: boolean;
 }
+
+export type HeatControl = TemperatureControl;
 
 export interface Schedule {
     oneTime: boolean;

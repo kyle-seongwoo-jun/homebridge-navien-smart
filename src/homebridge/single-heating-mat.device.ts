@@ -32,6 +32,8 @@ export class SingleHeatingMat extends HeatingMat {
         CurrentHeaterCoolerState,
         CurrentTemperature,
         HeatingThresholdTemperature,
+        CoolingThresholdTemperature,
+        TargetHeaterCoolerState,
         LockPhysicalControls,
       },
       Service: {
@@ -63,6 +65,11 @@ export class SingleHeatingMat extends HeatingMat {
     heater.getCharacteristic(HeatingThresholdTemperature)
       .onGet(this.getTargetTemperature.bind(this))
       .onSet(this.setTargetTemperature.bind(this));
+    if (this.device.functions.coolRange) {
+      heater.getCharacteristic(CoolingThresholdTemperature)
+        .onGet(this.getTargetTemperature.bind(this))
+        .onSet(this.setTargetTemperature.bind(this));
+    }
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
@@ -81,12 +88,25 @@ export class SingleHeatingMat extends HeatingMat {
     });
     this.deviceStatus.targetTemperatureChanges.subscribe((temperature: number) => {
       this.log.debug('[HB] Update Target Temperature:', temperature);
-      heater.updateCharacteristic(HeatingThresholdTemperature, temperature);
+      heater.updateCharacteristic(
+        this.deviceStatus.isCooling ? CoolingThresholdTemperature : HeatingThresholdTemperature,
+        temperature,
+      );
 
       // We may need to update CurrentHeaterCoolerState since isIdle may have changed
       const { isPowerOn, isIdle } = this.deviceStatus;
       const [state, stateString] = this.getCurrentHeaterStateWithString(isPowerOn, isIdle);
       this.log.debug(`[HB] Update Heater State: ${stateString}`);
+      heater.updateCharacteristic(CurrentHeaterCoolerState, state);
+    });
+    this.deviceStatus.seasonChanges.subscribe(() => {
+      const targetMode = this.deviceStatus.isCooling ?
+        TargetHeaterCoolerState.COOL :
+        TargetHeaterCoolerState.HEAT;
+      heater.updateCharacteristic(TargetHeaterCoolerState, targetMode);
+
+      const { isPowerOn, isIdle } = this.deviceStatus;
+      const [state] = this.getCurrentHeaterStateWithString(isPowerOn, isIdle);
       heater.updateCharacteristic(CurrentHeaterCoolerState, state);
     });
     this.deviceStatus.lockedChanges.subscribe((isLocked: boolean) => {
@@ -120,11 +140,11 @@ export class SingleHeatingMat extends HeatingMat {
 
     // power
     thermostat.getCharacteristic(CurrentHeatingCoolingState)
-      .onGet(this.getPower.bind(this));
+      .onGet(this.getThermostatMode.bind(this));
 
     thermostat.getCharacteristic(TargetHeatingCoolingState)
-      .onGet(this.getPower.bind(this))
-      .onSet(this.setPower.bind(this));
+      .onGet(this.getThermostatMode.bind(this))
+      .onSet(this.setThermostatMode.bind(this));
 
     // current temperature
     thermostat.getCharacteristic(CurrentTemperature)
@@ -137,14 +157,33 @@ export class SingleHeatingMat extends HeatingMat {
 
     // subscribe to device events
     this.deviceStatus.isPowerOnChanges.subscribe((isPowerOn: boolean) => {
+      const activeState = this.deviceStatus.isCooling ?
+        CurrentHeatingCoolingState.COOL :
+        CurrentHeatingCoolingState.HEAT;
+      const targetState = this.deviceStatus.isCooling ?
+        TargetHeatingCoolingState.COOL :
+        TargetHeatingCoolingState.HEAT;
       this.log.debug('[HB] Update Power:', isPowerOn ? 'ON' : 'OFF');
       thermostat.updateCharacteristic(
         CurrentHeatingCoolingState,
-        isPowerOn ? CurrentHeatingCoolingState.HEAT : CurrentHeatingCoolingState.OFF,
+        isPowerOn ? activeState : CurrentHeatingCoolingState.OFF,
       );
       thermostat.updateCharacteristic(
         TargetHeatingCoolingState,
-        isPowerOn ? TargetHeatingCoolingState.HEAT : TargetHeatingCoolingState.OFF,
+        isPowerOn ? targetState : TargetHeatingCoolingState.OFF,
+      );
+    });
+    this.deviceStatus.seasonChanges.subscribe(() => {
+      if (!this.deviceStatus.isPowerOn) {
+        return;
+      }
+      thermostat.updateCharacteristic(
+        CurrentHeatingCoolingState,
+        this.deviceStatus.isCooling ? CurrentHeatingCoolingState.COOL : CurrentHeatingCoolingState.HEAT,
+      );
+      thermostat.updateCharacteristic(
+        TargetHeatingCoolingState,
+        this.deviceStatus.isCooling ? TargetHeatingCoolingState.COOL : TargetHeatingCoolingState.HEAT,
       );
     });
     this.deviceStatus.currentTemperatureChanges.subscribe((temperature: number) => {

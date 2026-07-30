@@ -22,7 +22,7 @@
 
 ### ⚠️ 경고
 
-이 플러그인은 `EME520`와 `EMW720` 모델에서만 테스트되었습니다. 다른 모델에서는 작동하지 않을 수 있습니다. 다른 모델을 사용하는 경우 [관련 이슈](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24)에 코멘트를 남겨주세요.
+난방 제어는 `EME520`와 `EMW720` 모델에서 테스트되었으며, 사계절 매트의 난방·냉방 제어는 `EMF500`에서 검증되었습니다. 다른 모델에서는 작동하지 않을 수 있습니다. 다른 모델을 사용하는 경우 [관련 이슈](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24)에 코멘트를 남겨주세요.
 
 자세한 정보는 [모델별 구현 상태](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24)를 참조하세요.
 

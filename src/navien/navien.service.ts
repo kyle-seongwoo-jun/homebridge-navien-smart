@@ -2,7 +2,7 @@ import { ConnectionState } from '@aws-amplify/pubsub';
 import assert from 'assert';
 import { Logging } from 'homebridge';
 
-import { OperationMode } from '../aws/interfaces/index.js';
+import { OperationMode, Season } from '../aws/interfaces/index.js';
 import { AwsPubSub } from '../aws/pubsub.js';
 import { debounced } from '../utils/debounce.util.js';
 import { NavienException, ValidationException } from './exceptions/index.js';
@@ -105,32 +105,38 @@ export class NavienService {
     this._validateZone(device, zone);
 
     // validate temperature
-    const { min, max, step } = device.functions.heatRange;
+    const repository = this.getDeviceStatusRepositoryOf(device);
+    const range = repository.isCooling ? device.functions.coolRange : device.functions.heatRange;
+    assert(range !== undefined, 'Cooling is not supported by this device');
+    const { min, max, step } = range;
     this._validateTemperature(temperature, { min, max, step });
 
-    const enable = temperature > min;
+    const enable = repository.isCooling || temperature > min;
     return this.api.setTemperature(device, {
       [zone]: { enable, temperature },
-    });
+    }, repository.season);
   }
 
   // set temperature for both zones if device is double,
   // otherwise set temperature for single zone
   private _setUnifiedTemperature(device: NavienDevice, temperature: number) {
     // validate temperature
-    const { min, max, step } = device.functions.heatRange;
+    const repository = this.getDeviceStatusRepositoryOf(device);
+    const range = repository.isCooling ? device.functions.coolRange : device.functions.heatRange;
+    assert(range !== undefined, 'Cooling is not supported by this device');
+    const { min, max, step } = range;
     this._validateTemperature(temperature, { min, max, step });
 
-    const enable = temperature > min;
+    const enable = repository.isCooling || temperature > min;
     if (device.isDouble) {
       return this.api.setTemperature(device, {
         left: { enable, temperature },
         right: { enable, temperature },
-      });
+      }, repository.season);
     } else {
       return this.api.setTemperature(device, {
         single: { enable, temperature },
-      });
+      }, repository.season);
     }
   }
 
@@ -210,6 +216,15 @@ export class NavienService {
     } else {
       this.log.error(`Failed to set temperature to ${temperature} for device: ${device.name}, zone: ${zone ?? 'unified'}`);
     }
+  }
+
+  public async setSeason(device: NavienDevice, season: Season) {
+    if (season === Season.COOL && !device.functions.coolRange) {
+      throw new ValidationException('Cooling is not supported by this device.');
+    }
+
+    this.log.debug(`Setting season to ${Season[season]} for device: ${device.name}`);
+    await this.api.setSeason(device, season);
   }
 
   public async lock(device: NavienDevice, isLocked: boolean) {

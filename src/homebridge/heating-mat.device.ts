@@ -1,5 +1,6 @@
 import { CharacteristicValue, Service } from 'homebridge';
 
+import { Season } from '../aws/interfaces/index.js';
 import { NavienDevice } from '../navien/navien.device.js';
 import { NavienDeviceStatusRepository } from '../navien/navien.device-status.js';
 import { NavienService } from '../navien/navien.service.js';
@@ -54,6 +55,7 @@ export abstract class HeatingMat {
         TemperatureDisplayUnits,
         TargetHeaterCoolerState,
         HeatingThresholdTemperature,
+        CoolingThresholdTemperature,
         LockPhysicalControls,
       },
     } = this.platform;
@@ -68,9 +70,12 @@ export abstract class HeatingMat {
     // target state
     heater.getCharacteristic(TargetHeaterCoolerState)
       .setProps({
-        validValues: [TargetHeaterCoolerState.HEAT],
+        validValues: this.device.functions.coolRange ?
+          [TargetHeaterCoolerState.HEAT, TargetHeaterCoolerState.COOL] :
+          [TargetHeaterCoolerState.HEAT],
       })
-      .setValue(TargetHeaterCoolerState.HEAT);
+      .onGet(this.getTargetMode.bind(this))
+      .onSet(this.setTargetMode.bind(this));
 
     // heat range
     const { heatRange } = this.device.functions;
@@ -80,6 +85,16 @@ export abstract class HeatingMat {
         maxValue: heatRange.max,
         minStep: heatRange.step,
       });
+
+    const { coolRange } = this.device.functions;
+    if (coolRange) {
+      heater.getCharacteristic(CoolingThresholdTemperature)
+        .setProps({
+          minValue: coolRange.min,
+          maxValue: coolRange.max,
+          minStep: coolRange.step,
+        });
+    }
 
     // lock
     heater.getCharacteristic(LockPhysicalControls)
@@ -111,28 +126,26 @@ export abstract class HeatingMat {
     // current state
     thermostat.getCharacteristic(CurrentHeatingCoolingState)
       .setProps({
-        validValues: [
-          CurrentHeatingCoolingState.OFF,
-          CurrentHeatingCoolingState.HEAT,
-        ],
+        validValues: this.device.functions.coolRange ?
+          [CurrentHeatingCoolingState.OFF, CurrentHeatingCoolingState.HEAT, CurrentHeatingCoolingState.COOL] :
+          [CurrentHeatingCoolingState.OFF, CurrentHeatingCoolingState.HEAT],
       });
 
     // target state
     thermostat.getCharacteristic(TargetHeatingCoolingState)
       .setProps({
-        validValues: [
-          TargetHeatingCoolingState.OFF,
-          TargetHeatingCoolingState.HEAT,
-        ],
+        validValues: this.device.functions.coolRange ?
+          [TargetHeatingCoolingState.OFF, TargetHeatingCoolingState.HEAT, TargetHeatingCoolingState.COOL] :
+          [TargetHeatingCoolingState.OFF, TargetHeatingCoolingState.HEAT],
       });
 
     // target temperature
-    const { heatRange } = this.device.functions;
+    const { heatRange, coolRange } = this.device.functions;
     thermostat.getCharacteristic(TargetTemperature)
       .setProps({
-        minValue: heatRange.min,
+        minValue: coolRange?.min ?? heatRange.min,
         maxValue: heatRange.max,
-        minStep: heatRange.step,
+        minStep: Math.min(heatRange.step, coolRange?.step ?? heatRange.step),
       });
   }
 
@@ -179,6 +192,45 @@ export abstract class HeatingMat {
 
     this.log.debug('[HB] Set Power:', isPowerOn ? 'ON' : 'OFF');
     await this.service.activate(this.device, isPowerOn);
+  }
+
+  protected async getTargetMode(): Promise<CharacteristicValue> {
+    this.service.requestRefreshingStatus(this.device);
+    const { Characteristic } = this.platform;
+    return this.deviceStatus.isCooling ?
+      Characteristic.TargetHeaterCoolerState.COOL :
+      Characteristic.TargetHeaterCoolerState.HEAT;
+  }
+
+  protected async setTargetMode(value: CharacteristicValue) {
+    const { Characteristic } = this.platform;
+    const season = value === Characteristic.TargetHeaterCoolerState.COOL ?
+      Season.COOL :
+      Season.HEAT;
+    await this.service.setSeason(this.device, season);
+  }
+
+  protected async getThermostatMode(): Promise<CharacteristicValue> {
+    this.service.requestRefreshingStatus(this.device);
+    const { Characteristic } = this.platform;
+    if (!this.deviceStatus.isPowerOn) {
+      return Characteristic.TargetHeatingCoolingState.OFF;
+    }
+    return this.deviceStatus.isCooling ?
+      Characteristic.TargetHeatingCoolingState.COOL :
+      Characteristic.TargetHeatingCoolingState.HEAT;
+  }
+
+  protected async setThermostatMode(value: CharacteristicValue) {
+    const { Characteristic } = this.platform;
+    if (value === Characteristic.TargetHeatingCoolingState.OFF) {
+      await this.service.activate(this.device, false);
+      return;
+    }
+    const season = value === Characteristic.TargetHeatingCoolingState.COOL ?
+      Season.COOL :
+      Season.HEAT;
+    await this.service.setSeason(this.device, season);
   }
 
   // Only used for HeaterCooler Service
@@ -299,8 +351,11 @@ export abstract class HeatingMat {
       return [Characteristic.CurrentHeaterCoolerState.INACTIVE, 'INACTIVE'];
     }
 
-    return isIdle ?
-      [Characteristic.CurrentHeaterCoolerState.IDLE, 'IDLE'] :
+    if (isIdle) {
+      return [Characteristic.CurrentHeaterCoolerState.IDLE, 'IDLE'];
+    }
+    return this.deviceStatus.isCooling ?
+      [Characteristic.CurrentHeaterCoolerState.COOLING, 'COOLING'] :
       [Characteristic.CurrentHeaterCoolerState.HEATING, 'HEATING'];
   }
 }

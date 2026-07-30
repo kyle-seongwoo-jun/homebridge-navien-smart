@@ -26,7 +26,7 @@ A plugin for interacting with the "Navien Smart" system, which can control Navie
 
 ### ⚠️ Warning
 
-This plugin is only tested with `EME520` and `EMW720` models. It may not work with other models. If you have a different model, please comment on [this issue](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24) to support your model.
+Heating control has been tested with `EME520` and `EMW720`. Heating and cooling control for four-season mats has been validated with `EMF500`. It may not work with other models. If you have a different model, please comment on [this issue](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24) to support your model.
 
 See [Implementation Status](https://github.com/kyle-seongwoo-jun/homebridge-navien-smart/issues/24) for more information.
 
